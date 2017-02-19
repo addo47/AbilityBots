@@ -330,7 +330,8 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     private void afterConsumption(Tuple2<MessageContext, Ability> tuple) {
-        tuple.getT2().afterConsumer().accept(tuple.getT1());
+        Optional.ofNullable(tuple.getT2().afterConsumer())
+                .ifPresent(consumer -> consumer.accept(tuple.getT1()));
     }
 
     Tuple2<MessageContext, Ability> consumeUpdate(Tuple2<MessageContext, Ability> tuple) {
