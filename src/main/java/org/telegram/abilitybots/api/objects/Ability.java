@@ -15,6 +15,7 @@ import static org.apache.commons.lang3.StringUtils.isAlphanumeric;
 public final class Ability {
     private static final String TAG = Ability.class.getName();
     private final String name;
+    private final String info;
     private final Locality locality;
     private final Privacy privacy;
     private final int argNum;
@@ -22,11 +23,12 @@ public final class Ability {
     private final Consumer<MessageContext> postConsumer;
     private final Flag[] flags;
 
-    private Ability(String name, Locality locality, Privacy privacy, int argNum, Consumer<MessageContext> consumer, Consumer<MessageContext> postConsumer, Flag... flags) {
+    private Ability(String name, String info, Locality locality, Privacy privacy, int argNum, Consumer<MessageContext> consumer, Consumer<MessageContext> postConsumer, Flag... flags) {
         checkArgument(!name.isEmpty(), "Method name cannot be empty");
         checkArgument(!containsWhitespace(name), "Method name cannot contain spaces");
         checkArgument(isAlphanumeric(name), "Method name can only be alpha-numeric", name);
         this.name = checkNotNull(name, "Please specify a valid method name");
+        this.info = info;
 
         this.locality = checkNotNull(locality, "Please specify a valid locality setting. Use the Locality enum class");
         this.privacy = checkNotNull(privacy, "Please specify a valid privacy setting. Use the Privacy enum class");
@@ -49,6 +51,10 @@ public final class Ability {
 
     public String name() {
         return name;
+    }
+
+    public String info() {
+        return info;
     }
 
     public Locality locality() {
@@ -112,6 +118,7 @@ public final class Ability {
         private Locality locality;
         private Privacy privacy;
         private int argNum;
+        private String info;
 
         private AbilityBuilder() {
         }
@@ -123,6 +130,11 @@ public final class Ability {
 
         public AbilityBuilder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        public AbilityBuilder info(String info) {
+            this.info = info;
             return this;
         }
 
@@ -152,7 +164,7 @@ public final class Ability {
         }
 
         public Ability build() {
-            return new Ability(name, locality, privacy, argNum, consumer, postConsumer, flags);
+            return new Ability(name, info, locality, privacy, argNum, consumer, postConsumer, flags);
         }
     }
 }

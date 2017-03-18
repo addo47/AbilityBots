@@ -134,6 +134,7 @@ public class MapDBContext implements DBContext {
     @Override
     public boolean recover(Object backup) {
         try {
+            Map<String, Object> currentData = db.getAll();
             Map<String, Object> backupData = objectMapper.readValue(backup.toString(), new TypeReference<HashMap<String, Object>>() {});
             backupData.entrySet().forEach(entry -> {
                 Object value = entry.getValue();

@@ -1,5 +1,6 @@
 package org.telegram.abilitybots.api.bot;
 
+import org.apache.commons.io.IOUtils;
 import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.*;
 import org.telegram.abilitybots.api.sender.MessageSender;
@@ -18,6 +19,7 @@ import reactor.util.function.Tuples;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
@@ -28,7 +30,9 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.time.ZonedDateTime.now;
 import static java.util.Arrays.stream;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -96,6 +100,9 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+        BotLogger.info(format("New update [%s] received at %s", update.getUpdateId(), now()), TAG);
+        BotLogger.info(update.toString(), TAG);
+
         Stream.of(update)
                 .filter(this::checkGlobalFlags)
                 .filter(this::checkBlacklist)
@@ -109,6 +116,8 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                 .map(this::getContext)
                 .map(this::consumeUpdate)
                 .forEach(this::postConsumption);
+
+        BotLogger.info(format("Processing of update [%s] ended at %s", update.getUpdateId(), now()), TAG);
     }
 
     @Override
@@ -119,6 +128,27 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     @Override
     public String getBotUsername() {
         return botUsername;
+    }
+
+    public Ability commands() {
+        return builder()
+                .name("commands")
+                .locality(ALL)
+                .privacy(PUBLIC)
+                .flag(TEXT)
+                .input(0)
+                .consumer(ctx -> {
+                    String commands = abilities.entrySet().stream()
+                            .filter(entry -> nonNull(entry.getValue().info()))
+                            .map(entry -> {
+                                String name = entry.getValue().name();
+                                String info = entry.getValue().info();
+                                return format("%s - %s", name, info);
+                            })
+                            .reduce((a, b) -> format("%s%n%s", a, b)).orElse("No public commands found.");
+                    sender.send(commands, ctx.chatId());
+                })
+                .build();
     }
 
     public Ability recover() {
@@ -132,9 +162,14 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                     String fileId = ctx.update().getMessage().getDocument().getFileId();
                     try {
                         File backup = downloadFile(getFile(new GetFile().setFileId(fileId)));
-                        db.recover(backup);
-                        sender.send("I have successfully recovered.", ctx.chatId());
-                    } catch (TelegramApiException e) {
+                        String backupData = IOUtils.toString(new FileReader(backup));
+                        if (db.recover(backupData)) {
+                            sender.send("I have successfully recovered.", ctx.chatId());
+                        } else {
+                            sender.send("Oops, something went wrong during recovery.", ctx.chatId());
+                        }
+
+                    } catch (Exception e) {
                         BotLogger.error("Could not recover DB from backup", TAG, e);
                         sender.send("I have failed to recover.", ctx.chatId());
                     }
@@ -459,10 +494,14 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     Tuple3<Update, Ability, String[]> getAbility(Update update) {
         // Handle updates without messages
         // Passing through this function means that the global flags have passed
-        if (!update.hasMessage() || !update.getMessage().hasText())
+        Message msg = update.getMessage();
+        if (!update.hasMessage() || !(msg.hasText() || nonNull(msg.getCaption())))
             return Tuples.of(update, abilities.get(DEFAULT), new String[]{});
 
-        String[] tokens = update.getMessage().getText().split(" ");
+        // Priority goes to text before captions
+        String[] tokens = msg.hasText() ?
+                msg.getText().split(" ") :
+                msg.getCaption().split(" ");
 
         if (tokens[0].startsWith("/")) {
             Ability ability = abilities.get(tokens[0].substring(1));
@@ -505,6 +544,6 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     boolean checkGlobalFlags(Update update) {
-        return MESSAGE.test(update) && TEXT.test(update);
+        return MESSAGE.test(update);
     }
 }

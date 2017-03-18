@@ -24,7 +24,7 @@ public class DefaultBot extends AbilityBot {
     }
 
     public Ability defaultAbility() {
-        return getDefaultBuilder().name(DEFAULT).build();
+        return getDefaultBuilder().name(DEFAULT).info("dis iz default command").build();
     }
 
     public Ability testAbility() {

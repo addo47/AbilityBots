@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.*;
+import org.telegram.abilitybots.api.sender.LocalMessageSender;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.User;
@@ -288,6 +289,21 @@ public class AbilityBotTest {
     }
 
     @Test
+    public void canBlockSuperAdminsFromCreatorAbilities() {
+        Update update = mock(Update.class);
+        Message message = mock(Message.class);
+        org.telegram.telegrambots.api.objects.User user = mock(User.class);
+        Ability creatorAbility = getDefaultBuilder().privacy(Privacy.CREATOR).build();
+
+        Tuple3<Update, Ability, String[]> creatorTuple = Tuples.of(update, creatorAbility, TEXT);
+
+        db.getSet(SUPER_ADMINS).add(MUSER.id());
+        mockUser(update, message, user);
+
+        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(creatorTuple));
+    }
+
+    @Test
     public void canCheckLocality() {
         Update update = mock(Update.class);
         Message message = mock(Message.class);
@@ -332,11 +348,7 @@ public class AbilityBotTest {
 
         when(update.hasMessage()).thenReturn(true);
         when(update.getMessage()).thenReturn(message);
-        when(message.hasText()).thenReturn(true);
         assertEquals("Unexpected result when checking for locality", true, defaultBot.checkGlobalFlags(update));
-
-        when(message.hasText()).thenReturn(false);
-        assertEquals("Unexpected result when checking for locality", false, defaultBot.checkGlobalFlags(update));
     }
 
     @Test(expected = ArithmeticException.class)
@@ -406,6 +418,24 @@ public class AbilityBotTest {
 
         assertEquals("Unexpected result when checking for message flags", false, defaultBot.checkMessageFlags(docTuple));
         assertEquals("Unexpected result when checking for message flags", true, defaultBot.checkMessageFlags(textTuple));
+    }
+
+    @Test
+    public void canReportCommands() {
+        Update update = mock(Update.class);
+        Message message = mock(Message.class);
+
+        when(update.hasMessage()).thenReturn(true);
+        when(update.getMessage()).thenReturn(message);
+        when(message.hasText()).thenReturn(true);
+        MessageContext context = mock(MessageContext.class);
+        when(context.chatId()).thenReturn(GROUP_ID);
+
+        defaultBot.commands().consumer().accept(context);
+
+        String actual = ((LocalMessageSender)defaultBot.sender).log().get(0);
+        String expected = "default - dis iz default command";
+        assertEquals("Actual commands don't match the expected", expected, actual);
     }
 
     @After
