@@ -13,15 +13,15 @@ import static java.util.Optional.empty;
 /**
  * Created by Addo on 2/9/2017.
  */
-public class MessageSenderOffline implements MessageSender {
-    private static final String TAG = MessageSenderOffline.class.getName();
+public class LocalMessageSender implements MessageSender {
+    private static final String TAG = LocalMessageSender.class.getName();
 
-    public MessageSenderOffline(DefaultAbsSender sender) {
+    public LocalMessageSender(DefaultAbsSender sender) {
         // do nothing
     }
 
     @Override
-    public Optional<Message> sendMessage(String message, long id) {
+    public Optional<Message> send(String message, long id) {
         BotLogger.info(TAG, format("Sending message [%s] to ID [%d]", message, id));
         return empty();
     }
@@ -33,7 +33,7 @@ public class MessageSenderOffline implements MessageSender {
     }
 
     @Override
-    public Optional<Message> sendMessage(SendMessage message) {
+    public Optional<Message> send(SendMessage message) {
         BotLogger.info(TAG, format("Sending SendMessage [%s]", message.toString()));
         return empty();
     }

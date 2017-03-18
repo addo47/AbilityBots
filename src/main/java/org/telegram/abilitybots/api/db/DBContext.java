@@ -21,6 +21,20 @@ public interface DBContext extends Closeable{
 
     <T> Set<T> getGroupSet(String name, long id);
 
+    String summary();
+
+    Object backup();
+    boolean recover(Object backup);
+
+    String setInfo(String setName);
+    String groupSetInfo(String setName, long id);
+
+    String listInfo(String listName);
+    String groupListInfo(String listName, long id);
+
+    String mapInfo(String mapName);
+    String groupMapInfo(String mapName, long id);
+
     void commit();
 
     void clear();

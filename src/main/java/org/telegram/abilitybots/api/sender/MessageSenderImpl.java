@@ -24,13 +24,8 @@ public class MessageSenderImpl implements MessageSender {
         this.bot = bot;
     }
 
-    public void setBot() {
-        this.bot = bot;
-    }
-
-
     @Override
-    public Optional<Message> sendMessage(String message, long id) {
+    public Optional<Message> send(String message, long id) {
         return doSendMessage(message, id, false);
     }
 
@@ -40,7 +35,7 @@ public class MessageSenderImpl implements MessageSender {
     }
 
     @Override
-    public Optional<Message> sendMessage(SendMessage message) {
+    public Optional<Message> send(SendMessage message) {
         try {
             return ofNullable(bot.sendMessage(message));
         } catch (TelegramApiException e) {
@@ -55,6 +50,6 @@ public class MessageSenderImpl implements MessageSender {
         smsg.setText(txt);
         smsg.enableMarkdown(markdown);
 
-        return sendMessage(smsg);
+        return send(smsg);
     }
 }

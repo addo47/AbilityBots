@@ -12,9 +12,6 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.containsWhitespace;
 import static org.apache.commons.lang3.StringUtils.isAlphanumeric;
 
-/**
- * Created by Addo on 2/5/2017.
- */
 public final class Ability {
     private static final String TAG = Ability.class.getName();
     private final String name;
@@ -22,10 +19,10 @@ public final class Ability {
     private final Privacy privacy;
     private final int argNum;
     private final Consumer<MessageContext> consumer;
-    private final Consumer<MessageContext> afterConsumer;
+    private final Consumer<MessageContext> postConsumer;
+    private final Flag[] flags;
 
-    private Ability(String name, Locality locality, Privacy privacy, int argNum, Consumer<MessageContext> consumer, Consumer<MessageContext> afterConsumer) {
-
+    private Ability(String name, Locality locality, Privacy privacy, int argNum, Consumer<MessageContext> consumer, Consumer<MessageContext> postConsumer, Flag... flags) {
         checkArgument(!name.isEmpty(), "Method name cannot be empty");
         checkArgument(!containsWhitespace(name), "Method name cannot contain spaces");
         checkArgument(isAlphanumeric(name), "Method name can only be alpha-numeric", name);
@@ -39,10 +36,11 @@ public final class Ability {
         this.argNum = argNum;
 
         this.consumer = checkNotNull(consumer, "Method consumer can't be empty. Please assign a function by using .consumer() method");
-        if (afterConsumer == null)
-            BotLogger.info(TAG, format("No after consumer was detected for method with name [%s]", name));
+        if (postConsumer == null)
+            BotLogger.info(TAG, format("No post consumer was detected for method with name [%s]", name));
 
-        this.afterConsumer = afterConsumer;
+        this.flags = flags;
+        this.postConsumer = postConsumer;
     }
 
     public static AbilityBuilder builder() {
@@ -69,8 +67,12 @@ public final class Ability {
         return consumer;
     }
 
-    public Consumer<MessageContext> afterConsumer() {
-        return afterConsumer;
+    public Consumer<MessageContext> postConsumer() {
+        return postConsumer;
+    }
+
+    public Flag[] flags() {
+        return flags;
     }
 
     @Override
@@ -104,8 +106,9 @@ public final class Ability {
 
     public static class AbilityBuilder {
         private Consumer<MessageContext> consumer;
-        private Consumer<MessageContext> afterConsumer;
+        private Consumer<MessageContext> postConsumer;
         private String name;
+        private Flag[] flags;
         private Locality locality;
         private Privacy privacy;
         private int argNum;
@@ -120,6 +123,11 @@ public final class Ability {
 
         public AbilityBuilder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        public AbilityBuilder flag(Flag... flags) {
+            this.flags = flags;
             return this;
         }
 
@@ -138,14 +146,13 @@ public final class Ability {
             return this;
         }
 
-        public AbilityBuilder after(Consumer<MessageContext> afterConsumer) {
-            this.afterConsumer = afterConsumer;
+        public AbilityBuilder post(Consumer<MessageContext> postConsumer) {
+            this.postConsumer = postConsumer;
             return this;
         }
 
-
         public Ability build() {
-            return new Ability(name, locality, privacy, argNum, consumer, afterConsumer);
+            return new Ability(name, locality, privacy, argNum, consumer, postConsumer, flags);
         }
     }
 }

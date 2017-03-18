@@ -1,19 +1,24 @@
 package org.telegram.abilitybots.api.bot;
 
-import org.jetbrains.annotations.NotNull;
 import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.*;
 import org.telegram.abilitybots.api.sender.MessageSender;
 import org.telegram.abilitybots.api.sender.MessageSenderImpl;
+import org.telegram.telegrambots.api.methods.GetFile;
+import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.exceptions.TelegramApiException;
 import org.telegram.telegrambots.logging.BotLogger;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Map;
@@ -23,11 +28,14 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.util.Arrays.stream;
+import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static jersey.repackaged.com.google.common.base.Throwables.propagate;
 import static org.telegram.abilitybots.api.db.MapDBContext.onlineInstance;
 import static org.telegram.abilitybots.api.objects.Ability.builder;
+import static org.telegram.abilitybots.api.objects.Flag.*;
 import static org.telegram.abilitybots.api.objects.Locality.*;
 import static org.telegram.abilitybots.api.objects.Privacy.*;
 
@@ -38,6 +46,15 @@ import static org.telegram.abilitybots.api.objects.Privacy.*;
  * @date 18th of February, 2016
  */
 public abstract class AbilityBot extends TelegramLongPollingBot {
+    private static final String TAG = AbilityBot.class.getName();
+
+    // DB objects
+    public static final String SUPER_ADMINS = "SUPER_ADMINS";
+    public static final String ADMINS = "ADMINS";
+    public static final String USERS = "USERS";
+    public static final String BLACKLIST = "BLACKLIST";
+
+    // Factory commands
     public static final String DEFAULT = "default";
     public static final String CLAIM = "claim";
     public static final String BAN = "ban";
@@ -45,16 +62,15 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     public static final String SUDONT = "sudont";
     public static final String PROMOTE = "promote";
     public static final String DEMOTE = "demote";
-    public static final String SUPER_ADMINS = "SUPER_ADMINS";
-    public static final String ADMINS = "ADMINS";
-    public static final String USERS = "USERS";
-    public static final String BLACKLIST = "BLACKLIST";
-    private static final String TAG = AbilityBot.class.getName();
-    private static final String UNBAN = "unban";
+    public static final String UNBAN = "unban";
+
     protected final DBContext db;
+    protected MessageSender sender;
+
     private final String botToken;
     private final String botUsername;
-    protected MessageSender sender;
+
+    // Command registry
     private Map<String, Ability> abilities;
 
     public AbilityBot(String botToken, String botUsername, DBContext db, Class<? extends MessageSender> clazz) {
@@ -81,17 +97,18 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         Stream.of(update)
-                .filter(this::checkMessageFlags)
+                .filter(this::checkGlobalFlags)
                 .filter(this::checkBlacklist)
                 .map(this::addUser)
                 .map(this::getAbility)
                 .filter(this::validateAbility)
+                .filter(this::checkMessageFlags)
                 .filter(this::checkPrivacy)
                 .filter(this::checkLocality)
                 .filter(this::checkInput)
                 .map(this::getContext)
                 .map(this::consumeUpdate)
-                .forEach(this::afterConsumption);
+                .forEach(this::postConsumption);
     }
 
     @Override
@@ -104,6 +121,52 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         return botUsername;
     }
 
+    public Ability recover() {
+        return builder()
+                .name("recover")
+                .locality(USER)
+                .privacy(CREATOR)
+                .flag(DOCUMENT, CAPTION)
+                .input(0)
+                .consumer(ctx -> {
+                    String fileId = ctx.update().getMessage().getDocument().getFileId();
+                    try {
+                        File backup = downloadFile(getFile(new GetFile().setFileId(fileId)));
+                        db.recover(backup);
+                        sender.send("I have successfully recovered.", ctx.chatId());
+                    } catch (TelegramApiException e) {
+                        BotLogger.error("Could not recover DB from backup", TAG, e);
+                        sender.send("I have failed to recover.", ctx.chatId());
+                    }
+                })
+                .build();
+    }
+
+    public Ability backup() {
+        return builder()
+                .name("backup")
+                .locality(USER)
+                .privacy(CREATOR)
+                .input(0)
+                .consumer(ctx -> {
+                    File backup = new File("backup.json");
+
+                    try {
+                        PrintStream printStream = new PrintStream(backup);
+                        printStream.print(db.backup());
+                        sendDocument(new SendDocument()
+                                .setNewDocument(backup)
+                                .setChatId(ctx.chatId())
+                        );
+                    } catch (FileNotFoundException e) {
+                        BotLogger.error("Error while fetching backup", TAG, e);
+                    } catch (TelegramApiException e) {
+                        BotLogger.error("Error while sending document/backup file", TAG, e);
+                    }
+                })
+                .build();
+    }
+
     public Ability banUser() {
         return builder()
                 .name(BAN)
@@ -112,7 +175,6 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                 .input(1)
                 .consumer(ctx -> {
                     String username = stripTag(ctx.firstArg());
-                    org.telegram.abilitybots.api.objects.EndUser s;
                     Optional<Integer> endUser = getUser(username).map(EndUser::id);
 
                     endUser.ifPresent(user -> {
@@ -133,7 +195,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         }
                     });
                 })
-                .after(commit())
+                .post(commit())
                 .build();
     }
 
@@ -158,7 +220,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         }
                     });
                 })
-                .after(commit())
+                .post(commit())
                 .build();
     }
 
@@ -184,7 +246,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         }
                     });
                 })
-                .after(commit())
+                .post(commit())
                 .build();
     }
 
@@ -208,7 +270,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         }
                     });
                 })
-                .after(commit())
+                .post(commit())
                 .build();
     }
 
@@ -232,7 +294,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         }
                     });
                 })
-                .after(commit())
+                .post(commit())
                 .build();
     }
 
@@ -257,7 +319,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         }
                     });
                 })
-                .after(commit())
+                .post(commit())
                 .build();
     }
 
@@ -276,13 +338,13 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         abilities.get(BAN).consumer().accept(new MessageContext(ctx.update(), ctx.user(), ctx.chatId(), ctx.user().username()));
                     }
                 })
-                .after(commit())
+                .post(commit())
                 .build();
     }
 
     protected <T extends AbilityBot> void registerAbilities(T bot) {
         try {
-            abilities = Arrays.stream(bot.getClass().getMethods())
+            abilities = stream(bot.getClass().getMethods())
                     .filter(method -> method.getReturnType().equals(Ability.class))
                     .map(method -> {
                         try {
@@ -300,7 +362,6 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
     }
 
-    @NotNull
     private String stripTag(String name) {
         String username = name.toLowerCase();
         username = username.startsWith("@") ? username.substring(1, username.length()) : username;
@@ -309,14 +370,13 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
     private void setMaster(Set<Integer> admins, int id, long chatId) {
         if (admins.contains(id))
-            sender.sendMessage("You're already my master.", chatId);
+            sender.send("You're already my master.", chatId);
         else {
             admins.add(id);
-            sender.sendMessage("You're now my master.", chatId);
+            sender.send("You're now my master.", chatId);
         }
     }
 
-    @NotNull
     private Consumer<MessageContext> commit() {
         return ctx -> db.commit();
     }
@@ -329,8 +389,8 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         return db.<EndUser>getSet(USERS).stream().filter(user -> user.id() == id).findFirst();
     }
 
-    private void afterConsumption(Tuple2<MessageContext, Ability> tuple) {
-        Optional.ofNullable(tuple.getT2().afterConsumer())
+    private void postConsumption(Tuple2<MessageContext, Ability> tuple) {
+        ofNullable(tuple.getT2().postConsumer())
                 .ifPresent(consumer -> consumer.accept(tuple.getT1()));
     }
 
@@ -368,10 +428,20 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         EndUser user = new EndUser(tuple.getT1().getMessage().getFrom());
         boolean isUserMsg = tuple.getT1().getMessage().isUserMessage();
         Long groupId = tuple.getT1().getMessage().getChatId();
-        Privacy privacy = isSuperAdmin(user.id()) ? SUPERADMIN :
-                !isUserMsg && isAdmin(user.id(), groupId) ? ADMIN : PUBLIC;
+        Privacy privacy;
+        int id = user.id();
+        // Sonar
+        if (isCreator(id)) {
+            privacy = CREATOR;
+        } else {
+            privacy = isSuperAdmin(id) ? SUPERADMIN : !isUserMsg && isAdmin(id, groupId) ? ADMIN : PUBLIC;
+        }
 
         return privacy.compareTo(tuple.getT2().privacy()) >= 0;
+    }
+
+    private boolean isCreator(int id) {
+        return id == creatorId();
     }
 
     private boolean isSuperAdmin(Integer id) {
@@ -387,6 +457,11 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     Tuple3<Update, Ability, String[]> getAbility(Update update) {
+        // Handle updates without messages
+        // Passing through this function means that the global flags have passed
+        if (!update.hasMessage() || !update.getMessage().hasText())
+            return Tuples.of(update, abilities.get(DEFAULT), new String[]{});
+
         String[] tokens = update.getMessage().getText().split(" ");
 
         if (tokens[0].startsWith("/")) {
@@ -419,7 +494,17 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         return update;
     }
 
-    boolean checkMessageFlags(Update update) {
-        return update.hasMessage() && update.getMessage().hasText();
+    boolean checkMessageFlags(Tuple3<Update, Ability, String[]> tuple) {
+        Ability ability = tuple.getT2();
+        Update update = tuple.getT1();
+
+        return ofNullable(ability.flags())
+                .map(flags -> stream(flags)
+                        .reduce(true, (a, b) -> a && b.test(update), (a, b) -> a && b))
+                .orElse(true);
+    }
+
+    boolean checkGlobalFlags(Update update) {
+        return MESSAGE.test(update) && TEXT.test(update);
     }
 }

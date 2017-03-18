@@ -6,5 +6,6 @@ package org.telegram.abilitybots.api.objects;
 public enum Privacy {
     PUBLIC,
     ADMIN,
-    SUPERADMIN
+    SUPERADMIN,
+    CREATOR
 }

@@ -4,10 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.telegram.abilitybots.api.db.DBContext;
-import org.telegram.abilitybots.api.objects.Ability;
-import org.telegram.abilitybots.api.objects.EndUser;
-import org.telegram.abilitybots.api.objects.Locality;
-import org.telegram.abilitybots.api.objects.MessageContext;
+import org.telegram.abilitybots.api.objects.*;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.User;
@@ -27,15 +24,12 @@ import static org.mockito.Mockito.when;
 import static org.telegram.abilitybots.api.bot.AbilityBot.*;
 import static org.telegram.abilitybots.api.bot.DefaultBot.getDefaultBuilder;
 import static org.telegram.abilitybots.api.db.MapDBContext.offlineInstance;
+import static org.telegram.abilitybots.api.objects.Flag.DOCUMENT;
+import static org.telegram.abilitybots.api.objects.Flag.MESSAGE;
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Locality.GROUP;
-import static org.telegram.abilitybots.api.objects.Privacy.ADMIN;
-import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
-import static org.telegram.abilitybots.api.objects.Privacy.SUPERADMIN;
+import static org.telegram.abilitybots.api.objects.Privacy.*;
 
-/**
- * Created by Addo on 2/11/2017.
- */
 public class AbilityBotTest {
     public static final String[] EMPTY_ARRAY = {};
     public static final long GROUP_ID = 10L;
@@ -278,17 +272,19 @@ public class AbilityBotTest {
         Ability publicAbility = getDefaultBuilder().privacy(PUBLIC).build();
         Ability adminAbility = getDefaultBuilder().privacy(ADMIN).build();
         Ability superAdminAbility = getDefaultBuilder().privacy(SUPERADMIN).build();
-
+        Ability creatorAbility = getDefaultBuilder().privacy(Privacy.CREATOR).build();
 
         Tuple3<Update, Ability, String[]> publicTuple = Tuples.of(update, publicAbility, TEXT);
         Tuple3<Update, Ability, String[]> adminTuple = Tuples.of(update, adminAbility, TEXT);
         Tuple3<Update, Ability, String[]> superAdminTuple = Tuples.of(update, superAdminAbility, TEXT);
+        Tuple3<Update, Ability, String[]> creatorTuple = Tuples.of(update, creatorAbility, TEXT);
 
-        prepareMock(update, message, user);
+        mockUser(update, message, user);
 
         assertEquals("Unexpected result when checking for privacy", true, defaultBot.checkPrivacy(publicTuple));
         assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(adminTuple));
         assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(superAdminTuple));
+        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(creatorTuple));
     }
 
     @Test
@@ -304,7 +300,7 @@ public class AbilityBotTest {
         Tuple3<Update, Ability, String[]> userTuple = Tuples.of(update, userAbility, TEXT);
         Tuple3<Update, Ability, String[]> groupTuple = Tuples.of(update, groupAbility, TEXT);
 
-        prepareMock(update, message, user);
+        mockUser(update, message, user);
         when(message.isUserMessage()).thenReturn(true);
 
         assertEquals("Unexpected result when checking for locality", true, defaultBot.checkLocality(publicTuple));
@@ -321,7 +317,7 @@ public class AbilityBotTest {
         Tuple3<Update, Ability, String[]> tuple = Tuples.of(update, ability, TEXT);
 
         when(message.getChatId()).thenReturn(GROUP_ID);
-        prepareMock(update, message, user);
+        mockUser(update, message, user);
 
         Tuple2<MessageContext, Ability> actualTuple = defaultBot.getContext(tuple);
         Tuple2<MessageContext, Ability> expectedtuple = Tuples.of(new MessageContext(update, MUSER, GROUP_ID, TEXT), ability);
@@ -330,17 +326,17 @@ public class AbilityBotTest {
     }
 
     @Test
-    public void canCheckMessageFlags() {
+    public void canCheckGlobalFlags() {
         Update update = mock(Update.class);
         Message message = mock(Message.class);
 
         when(update.hasMessage()).thenReturn(true);
         when(update.getMessage()).thenReturn(message);
         when(message.hasText()).thenReturn(true);
-        assertEquals("Unexpected result when checking for locality", true, defaultBot.checkMessageFlags(update));
+        assertEquals("Unexpected result when checking for locality", true, defaultBot.checkGlobalFlags(update));
 
         when(message.hasText()).thenReturn(false);
-        assertEquals("Unexpected result when checking for locality", false, defaultBot.checkMessageFlags(update));
+        assertEquals("Unexpected result when checking for locality", false, defaultBot.checkGlobalFlags(update));
     }
 
     @Test(expected = ArithmeticException.class)
@@ -362,7 +358,9 @@ public class AbilityBotTest {
         Message message = mock(Message.class);
 
         String text = "/test";
+        when(update.hasMessage()).thenReturn(true);
         when(update.getMessage()).thenReturn(message);
+        when(update.getMessage().hasText()).thenReturn(true);
         when(message.getText()).thenReturn(text);
 
         Tuple2<Update, Ability> tuple = defaultBot.getAbility(update);
@@ -390,13 +388,32 @@ public class AbilityBotTest {
         assertEquals("Wrong ability was fetched", expected, actual);
     }
 
+    @Test
+    public void canCheckAbilityFlags() {
+        Update update = mock(Update.class);
+        Message message = mock(Message.class);
+
+        when(update.hasMessage()).thenReturn(true);
+        when(update.getMessage()).thenReturn(message);
+        when(message.hasDocument()).thenReturn(false);
+        when(message.hasText()).thenReturn(true);
+
+        Ability documentAbility = getDefaultBuilder().flag(DOCUMENT, MESSAGE).build();
+        Ability textAbility = getDefaultBuilder().flag(Flag.TEXT, MESSAGE).build();
+
+        Tuple3<Update, Ability, String[]> docTuple = Tuples.of(update, documentAbility, TEXT);
+        Tuple3<Update, Ability, String[]> textTuple = Tuples.of(update, textAbility, TEXT);
+
+        assertEquals("Unexpected result when checking for message flags", false, defaultBot.checkMessageFlags(docTuple));
+        assertEquals("Unexpected result when checking for message flags", true, defaultBot.checkMessageFlags(textTuple));
+    }
 
     @After
     public void tearDown() {
         db.clear();
     }
 
-    private void prepareMock(Update update, Message message, User user) {
+    private void mockUser(Update update, Message message, User user) {
         when(update.getMessage()).thenReturn(message);
         when(message.getFrom()).thenReturn(user);
         when(user.getFirstName()).thenReturn(MUSER.name());
