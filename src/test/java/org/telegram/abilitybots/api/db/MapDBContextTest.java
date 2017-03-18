@@ -47,6 +47,23 @@ public class MapDBContextTest {
 
 
     @Test
+    public void canFallbackDBIfRecoveryFails() throws IOException {
+        Set<EndUser> users = db.getSet(USERS);
+        users.add(CREATOR);
+        users.add(MUSER);
+
+        Set<EndUser> originalSet = newHashSet(users);
+        Object jsonBackup = db.backup();
+        String corruptBackup = "!@#$" + String.valueOf(jsonBackup);
+        boolean recovered = db.recover(corruptBackup);
+
+        Set<EndUser> recoveredSet = db.getSet(USERS);
+
+        assertEquals("Recovery was successful from a CORRUPT backup", false, recovered);
+        assertEquals("Set before and after corrupt recovery are not equal", originalSet, recoveredSet);
+    }
+
+    @Test
     public void canGetSummary() throws IOException {
         db.getSet(TEST).add("TEST");
 

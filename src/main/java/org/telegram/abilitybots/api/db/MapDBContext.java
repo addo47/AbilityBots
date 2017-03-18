@@ -116,7 +116,12 @@ public class MapDBContext implements DBContext {
 
     @Override
     public Object backup() {
-        Map<String, Object> collectedMap = db.getAll().entrySet().stream().map(entry -> {
+        Map<String, Object> collectedMap = localCopy();
+        return writeAsString(collectedMap);
+    }
+
+    private Map<String, Object> localCopy() {
+        return db.getAll().entrySet().stream().map(entry -> {
             Object struct = entry.getValue();
             if (struct instanceof Set)
                 return Tuples.of(entry.getKey(), newHashSet((Set) struct));
@@ -127,38 +132,44 @@ public class MapDBContext implements DBContext {
             else
                 return Tuples.of(entry.getKey(), struct);
         }).collect(toMap(tuple -> (String) tuple.getT1(), Tuple2::getT2));
-
-        return writeAsString(collectedMap);
     }
 
     @Override
     public boolean recover(Object backup) {
+        Map<String, Object> snapshot = localCopy();
         try {
-            Map<String, Object> currentData = db.getAll();
-            Map<String, Object> backupData = objectMapper.readValue(backup.toString(), new TypeReference<HashMap<String, Object>>() {});
-            backupData.entrySet().forEach(entry -> {
-                Object value = entry.getValue();
-                String name = entry.getKey();
-
-                if (value instanceof Set) {
-                    Set entrySet = (Set) value;
-                    getSet(name).addAll(entrySet);
-                } else if (value instanceof Map) {
-                    Map entryMap = (Map) value;
-                    getMap(name).putAll(entryMap);
-                } else if (value instanceof List) {
-                    List entryList = (List) value;
-                    getList(name).addAll(entryList);
-                } else {
-                    BotLogger.error(TAG, format("Unable to identify object type during DB recovery, entry name: %s", name));
-                }
+            Map<String, Object> backupData = objectMapper.readValue(backup.toString(), new TypeReference<HashMap<String, Object>>() {
             });
-            commit();
+            doRecover(backupData);
             return true;
         } catch (IOException e) {
             BotLogger.error(format("Could not recover DB data from file with String representation %s", backup), TAG, e);
+            // Attempt to fallback to data snapshot before recovery
+            doRecover(snapshot);
             return false;
         }
+    }
+
+    private void doRecover(Map<String, Object> backupData) {
+        clear();
+        backupData.entrySet().forEach(entry -> {
+            Object value = entry.getValue();
+            String name = entry.getKey();
+
+            if (value instanceof Set) {
+                Set entrySet = (Set) value;
+                getSet(name).addAll(entrySet);
+            } else if (value instanceof Map) {
+                Map entryMap = (Map) value;
+                getMap(name).putAll(entryMap);
+            } else if (value instanceof List) {
+                List entryList = (List) value;
+                getList(name).addAll(entryList);
+            } else {
+                BotLogger.error(TAG, format("Unable to identify object type during DB recovery, entry name: %s", name));
+            }
+        });
+        commit();
     }
 
     @Override
