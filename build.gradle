@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    compile     'org.telegram:telegrambots:2.4.4.4'
+    compile     'org.telegram:telegrambots:2.4.4.5'
     compile     'com.google.guava:guava:21.0'
     compile     'org.mapdb:mapdb:3.0.3'
     compile     'org.apache.commons:commons-lang3:3.5'
