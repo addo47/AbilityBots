@@ -44,11 +44,12 @@ public class MessageSenderImpl implements MessageSender {
         return empty();
     }
 
-    private Optional<Message> doSendMessage(String txt, long groupId, boolean markdown) {
+    private Optional<Message> doSendMessage(String txt, long groupId, boolean format) {
         SendMessage smsg = new SendMessage();
+//        smsg.enableHtml(format);
         smsg.setChatId(groupId);
         smsg.setText(txt);
-        smsg.enableMarkdown(markdown);
+        smsg.enableMarkdown(format);
 
         return send(smsg);
     }

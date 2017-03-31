@@ -6,9 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.telegram.abilitybots.api.util.Pair;
 import org.telegram.telegrambots.logging.BotLogger;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 import java.io.IOException;
 import java.util.*;
@@ -124,14 +123,14 @@ public class MapDBContext implements DBContext {
         return db.getAll().entrySet().stream().map(entry -> {
             Object struct = entry.getValue();
             if (struct instanceof Set)
-                return Tuples.of(entry.getKey(), newHashSet((Set) struct));
+                return Pair.of(entry.getKey(), newHashSet((Set) struct));
             else if (struct instanceof List)
-                return Tuples.of(entry.getKey(), newArrayList((List) struct));
+                return Pair.of(entry.getKey(), newArrayList((List) struct));
             else if (struct instanceof Map)
-                return Tuples.of(entry.getKey(), newHashMap((Map) struct));
+                return Pair.of(entry.getKey(), newHashMap((Map) struct));
             else
-                return Tuples.of(entry.getKey(), struct);
-        }).collect(toMap(tuple -> (String) tuple.getT1(), Tuple2::getT2));
+                return Pair.of(entry.getKey(), struct);
+        }).collect(toMap(pair -> (String) pair.a(), Pair::b));
     }
 
     @Override

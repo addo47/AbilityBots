@@ -15,7 +15,6 @@ dependencies {
     compile     'com.google.guava:guava:21.0'
     compile     'org.mapdb:mapdb:3.0.3'
     compile     'org.apache.commons:commons-lang3:3.5'
-    compile     'io.projectreactor:reactor-core:3.0.3.RELEASE'
 
     testCompile 'org.mockito:mockito-all:2.0.2-beta'
     testCompile 'junit:junit:4.11'

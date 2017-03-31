@@ -6,13 +6,11 @@ import org.junit.Test;
 import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.*;
 import org.telegram.abilitybots.api.sender.LocalMessageSender;
+import org.telegram.abilitybots.api.util.Pair;
+import org.telegram.abilitybots.api.util.Trio;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.User;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuple3;
-import reactor.util.function.Tuples;
-
 import java.util.Set;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -232,12 +230,12 @@ public class AbilityBotTest {
 
     @Test
     public void canValidateAbility() {
-        Tuple2<Update, Ability> invalidTuple = Tuples.of(null, null);
+        Trio<Update, Ability, String[]> invalidPair = Trio.of(null, null, null);
         Ability validAbility = getDefaultBuilder().build();
-        Tuple2<Update, Ability> validTuple = Tuples.of(null, validAbility);
+        Trio<Update, Ability, String[]> validPair = Trio.of(null, validAbility, null);
 
-        assertEquals("Bot can't validate ability properly", false, defaultBot.validateAbility(invalidTuple));
-        assertEquals("Bot can't validate ability properly", true, defaultBot.validateAbility(validTuple));
+        assertEquals("Bot can't validate ability properly", false, defaultBot.validateAbility(invalidPair));
+        assertEquals("Bot can't validate ability properly", true, defaultBot.validateAbility(validPair));
     }
 
     @Test
@@ -250,18 +248,18 @@ public class AbilityBotTest {
                 .input(0)
                 .build();
 
-        Tuple3<Update, Ability, String[]> tupleOneArg = Tuples.of(update, abilityWithOneInput, TEXT);
-        Tuple3<Update, Ability, String[]> tupleZeroArg = Tuples.of(update, abilityWithZeroInput, TEXT);
+        Trio<Update, Ability, String[]> trioOneArg = Trio.of(update, abilityWithOneInput, TEXT);
+        Trio<Update, Ability, String[]> trioZeroArg = Trio.of(update, abilityWithZeroInput, TEXT);
 
-        assertEquals("Unexpected result when applying token filter", true, defaultBot.checkInput(tupleOneArg));
+        assertEquals("Unexpected result when applying token filter", true, defaultBot.checkInput(trioOneArg));
 
-        tupleOneArg = Tuples.of(update, abilityWithOneInput, addAll(TEXT, TEXT));
-        assertEquals("Unexpected result when applying token filter", false, defaultBot.checkInput(tupleOneArg));
+        trioOneArg = Trio.of(update, abilityWithOneInput, addAll(TEXT, TEXT));
+        assertEquals("Unexpected result when applying token filter", false, defaultBot.checkInput(trioOneArg));
 
-        assertEquals("Unexpected result  when applying token filter", true, defaultBot.checkInput(tupleZeroArg));
+        assertEquals("Unexpected result  when applying token filter", true, defaultBot.checkInput(trioZeroArg));
 
-        tupleZeroArg = Tuples.of(update, abilityWithZeroInput, EMPTY_ARRAY);
-        assertEquals("Unexpected result when applying token filter", true, defaultBot.checkInput(tupleZeroArg));
+        trioZeroArg = Trio.of(update, abilityWithZeroInput, EMPTY_ARRAY);
+        assertEquals("Unexpected result when applying token filter", true, defaultBot.checkInput(trioZeroArg));
     }
 
 
@@ -275,17 +273,17 @@ public class AbilityBotTest {
         Ability superAdminAbility = getDefaultBuilder().privacy(SUPERADMIN).build();
         Ability creatorAbility = getDefaultBuilder().privacy(Privacy.CREATOR).build();
 
-        Tuple3<Update, Ability, String[]> publicTuple = Tuples.of(update, publicAbility, TEXT);
-        Tuple3<Update, Ability, String[]> adminTuple = Tuples.of(update, adminAbility, TEXT);
-        Tuple3<Update, Ability, String[]> superAdminTuple = Tuples.of(update, superAdminAbility, TEXT);
-        Tuple3<Update, Ability, String[]> creatorTuple = Tuples.of(update, creatorAbility, TEXT);
+        Trio<Update, Ability, String[]> publicTrio = Trio.of(update, publicAbility, TEXT);
+        Trio<Update, Ability, String[]> adminTrio = Trio.of(update, adminAbility, TEXT);
+        Trio<Update, Ability, String[]> superAdminTrio = Trio.of(update, superAdminAbility, TEXT);
+        Trio<Update, Ability, String[]> creatorTrio = Trio.of(update, creatorAbility, TEXT);
 
         mockUser(update, message, user);
 
-        assertEquals("Unexpected result when checking for privacy", true, defaultBot.checkPrivacy(publicTuple));
-        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(adminTuple));
-        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(superAdminTuple));
-        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(creatorTuple));
+        assertEquals("Unexpected result when checking for privacy", true, defaultBot.checkPrivacy(publicTrio));
+        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(adminTrio));
+        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(superAdminTrio));
+        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(creatorTrio));
     }
 
     @Test
@@ -295,12 +293,12 @@ public class AbilityBotTest {
         org.telegram.telegrambots.api.objects.User user = mock(User.class);
         Ability creatorAbility = getDefaultBuilder().privacy(Privacy.CREATOR).build();
 
-        Tuple3<Update, Ability, String[]> creatorTuple = Tuples.of(update, creatorAbility, TEXT);
+        Trio<Update, Ability, String[]> creatorTrio = Trio.of(update, creatorAbility, TEXT);
 
         db.getSet(SUPER_ADMINS).add(MUSER.id());
         mockUser(update, message, user);
 
-        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(creatorTuple));
+        assertEquals("Unexpected result when checking for privacy", false, defaultBot.checkPrivacy(creatorTrio));
     }
 
     @Test
@@ -312,16 +310,16 @@ public class AbilityBotTest {
         Ability userAbility = getDefaultBuilder().locality(Locality.USER).build();
         Ability groupAbility = getDefaultBuilder().locality(GROUP).build();
 
-        Tuple3<Update, Ability, String[]> publicTuple = Tuples.of(update, allAbility, TEXT);
-        Tuple3<Update, Ability, String[]> userTuple = Tuples.of(update, userAbility, TEXT);
-        Tuple3<Update, Ability, String[]> groupTuple = Tuples.of(update, groupAbility, TEXT);
+        Trio<Update, Ability, String[]> publicTrio = Trio.of(update, allAbility, TEXT);
+        Trio<Update, Ability, String[]> userTrio = Trio.of(update, userAbility, TEXT);
+        Trio<Update, Ability, String[]> groupTrio = Trio.of(update, groupAbility, TEXT);
 
         mockUser(update, message, user);
         when(message.isUserMessage()).thenReturn(true);
 
-        assertEquals("Unexpected result when checking for locality", true, defaultBot.checkLocality(publicTuple));
-        assertEquals("Unexpected result when checking for locality", true, defaultBot.checkLocality(userTuple));
-        assertEquals("Unexpected result when checking for locality", false, defaultBot.checkLocality(groupTuple));
+        assertEquals("Unexpected result when checking for locality", true, defaultBot.checkLocality(publicTrio));
+        assertEquals("Unexpected result when checking for locality", true, defaultBot.checkLocality(userTrio));
+        assertEquals("Unexpected result when checking for locality", false, defaultBot.checkLocality(groupTrio));
     }
 
     @Test
@@ -330,15 +328,15 @@ public class AbilityBotTest {
         Message message = mock(Message.class);
         User user = mock(User.class);
         Ability ability = getDefaultBuilder().build();
-        Tuple3<Update, Ability, String[]> tuple = Tuples.of(update, ability, TEXT);
+        Trio<Update, Ability, String[]> trio = Trio.of(update, ability, TEXT);
 
         when(message.getChatId()).thenReturn(GROUP_ID);
         mockUser(update, message, user);
 
-        Tuple2<MessageContext, Ability> actualTuple = defaultBot.getContext(tuple);
-        Tuple2<MessageContext, Ability> expectedtuple = Tuples.of(new MessageContext(update, MUSER, GROUP_ID, TEXT), ability);
+        Pair<MessageContext, Ability> actualPair = defaultBot.getContext(trio);
+        Pair<MessageContext, Ability> expectedPair = Pair.of(new MessageContext(update, MUSER, GROUP_ID, TEXT), ability);
 
-        assertEquals("Unexpected result when checking for locality", expectedtuple, actualTuple);
+        assertEquals("Unexpected result when checking for locality", expectedPair, actualPair);
     }
 
     @Test
@@ -359,9 +357,9 @@ public class AbilityBotTest {
                 }).build();
         MessageContext context = mock(MessageContext.class);
 
-        Tuple2<MessageContext, Ability> tuple = Tuples.of(context, ability);
+        Pair<MessageContext, Ability> pair = Pair.of(context, ability);
 
-        defaultBot.consumeUpdate(tuple);
+        defaultBot.consumeUpdate(pair);
     }
 
     @Test
@@ -375,10 +373,10 @@ public class AbilityBotTest {
         when(update.getMessage().hasText()).thenReturn(true);
         when(message.getText()).thenReturn(text);
 
-        Tuple2<Update, Ability> tuple = defaultBot.getAbility(update);
+        Trio<Update, Ability, String[]> trio = defaultBot.getAbility(update);
 
         Ability expected = defaultBot.testAbility();
-        Ability actual = tuple.getT2();
+        Ability actual = trio.b();
 
         assertEquals("Wrong ability was fetched", expected, actual);
     }
@@ -392,10 +390,10 @@ public class AbilityBotTest {
         when(update.getMessage()).thenReturn(message);
         when(message.getText()).thenReturn(text);
 
-        Tuple2<Update, Ability> tuple = defaultBot.getAbility(update);
+        Trio<Update, Ability, String[]> trio = defaultBot.getAbility(update);
 
         Ability expected = defaultBot.defaultAbility();
-        Ability actual = tuple.getT2();
+        Ability actual = trio.b();
 
         assertEquals("Wrong ability was fetched", expected, actual);
     }
@@ -413,11 +411,11 @@ public class AbilityBotTest {
         Ability documentAbility = getDefaultBuilder().flag(DOCUMENT, MESSAGE).build();
         Ability textAbility = getDefaultBuilder().flag(Flag.TEXT, MESSAGE).build();
 
-        Tuple3<Update, Ability, String[]> docTuple = Tuples.of(update, documentAbility, TEXT);
-        Tuple3<Update, Ability, String[]> textTuple = Tuples.of(update, textAbility, TEXT);
+        Trio<Update, Ability, String[]> docTrio = Trio.of(update, documentAbility, TEXT);
+        Trio<Update, Ability, String[]> textTrio = Trio.of(update, textAbility, TEXT);
 
-        assertEquals("Unexpected result when checking for message flags", false, defaultBot.checkMessageFlags(docTuple));
-        assertEquals("Unexpected result when checking for message flags", true, defaultBot.checkMessageFlags(textTuple));
+        assertEquals("Unexpected result when checking for message flags", false, defaultBot.checkMessageFlags(docTrio));
+        assertEquals("Unexpected result when checking for message flags", true, defaultBot.checkMessageFlags(textTrio));
     }
 
     @Test

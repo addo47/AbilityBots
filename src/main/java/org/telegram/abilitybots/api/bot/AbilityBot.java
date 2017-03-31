@@ -5,6 +5,8 @@ import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.*;
 import org.telegram.abilitybots.api.sender.MessageSender;
 import org.telegram.abilitybots.api.sender.MessageSenderImpl;
+import org.telegram.abilitybots.api.util.Pair;
+import org.telegram.abilitybots.api.util.Trio;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.objects.Message;
@@ -13,9 +15,6 @@ import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import org.telegram.telegrambots.logging.BotLogger;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuple3;
-import reactor.util.function.Tuples;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,7 +49,7 @@ import static org.telegram.abilitybots.api.objects.Privacy.*;
  * @date 18th of February, 2016
  */
 public abstract class AbilityBot extends TelegramLongPollingBot {
-    private static final String TAG = AbilityBot.class.getName();
+    private static final String TAG = AbilityBot.class.getSimpleName();
 
     // DB objects
     public static final String SUPER_ADMINS = "SUPER_ADMINS";
@@ -223,10 +222,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         Set<Integer> blacklist = db.getSet(BLACKLIST);
 
                         if (blacklist.contains(user))
-                            sender.sendFormatted(format("%s is already <b>banned</b>.", actualuser), ctx.chatId());
+                            sender.sendFormatted(format("%s is already *banned*.", actualuser), ctx.chatId());
                         else {
                             blacklist.add(user);
-                            sender.sendFormatted(format("%s is now <b>banned</b>.", actualuser), ctx.chatId());
+                            sender.sendFormatted(format("%s is now *banned*.", actualuser), ctx.chatId());
                         }
                     });
                 })
@@ -248,10 +247,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         Set<Integer> blacklist = db.getSet(BLACKLIST);
 
                         if (!blacklist.contains(user))
-                            sender.sendFormatted(format("%s is <b>not</b> on the <b>blacklist</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s is *not* on the *blacklist*.", username), ctx.chatId());
                         else {
                             blacklist.remove(user);
-                            sender.sendFormatted(format("%s, your ban has been <b>lifted</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s, your ban has been *lifted*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -274,10 +273,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         boolean isAdmin = admins.contains(user) || isSuperAdmin(user);
 
                         if (isAdmin)
-                            sender.sendFormatted(format("%s is already an <b>admin</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s is already an *admin*.", username), ctx.chatId());
                         else {
                             admins.add(user);
-                            sender.sendFormatted(format("%s is now an <b>admin</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s is now an *admin*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -298,10 +297,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                     endUserId.ifPresent(id -> {
                         Set<Integer> admins = db.getGroupSet(ADMINS, ctx.chatId());
                         if (!admins.contains(id)) {
-                            sender.sendFormatted(format("%s <b>not</b> an <b>admin</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s is *not* an *admin*.", username), ctx.chatId());
                         } else {
                             admins.remove(id);
-                            sender.sendFormatted(format("%s has been <b>demoted</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s has been *demoted*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -322,10 +321,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                     endUserId.ifPresent(id -> {
                         Set<Integer> superAdmins = db.getSet(SUPER_ADMINS);
                         if (superAdmins.contains(id))
-                            sender.sendFormatted(format("%s is already a <b>super admin</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s is already a *super admin*.", username), ctx.chatId());
                         else {
                             superAdmins.add(id);
-                            sender.sendFormatted(format("%s is now a <b>super admin</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s is now a *super admin*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -347,10 +346,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                     endUserId.ifPresent(id -> {
                         Set<Integer> superAdmins = db.getSet(SUPER_ADMINS);
                         if (!superAdmins.contains(id)) {
-                            sender.sendFormatted(format("%s is <b>not</b> a <b>super admin</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s is *not* a *super admin*.", username), ctx.chatId());
                         } else {
                             superAdmins.remove(id);
-                            sender.sendFormatted(format("%s has been <b>demoted</b>.", username), ctx.chatId());
+                            sender.sendFormatted(format("%s has been *demoted*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -361,7 +360,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     public Ability claimCreator() {
         return builder()
                 .name(CLAIM)
-                .locality(USER)
+                .locality(ALL)
                 .privacy(PUBLIC)
                 .input(0)
                 .consumer(ctx -> {
@@ -424,45 +423,47 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         return db.<EndUser>getSet(USERS).stream().filter(user -> user.id() == id).findFirst();
     }
 
-    private void postConsumption(Tuple2<MessageContext, Ability> tuple) {
-        ofNullable(tuple.getT2().postConsumer())
-                .ifPresent(consumer -> consumer.accept(tuple.getT1()));
+    private void postConsumption(Pair<MessageContext, Ability> pair) {
+        ofNullable(pair.b().postConsumer())
+                .ifPresent(consumer -> consumer.accept(pair.a()));
     }
 
-    Tuple2<MessageContext, Ability> consumeUpdate(Tuple2<MessageContext, Ability> tuple) {
-        tuple.getT2().consumer().accept(tuple.getT1());
-        return tuple;
+    Pair<MessageContext, Ability> consumeUpdate(Pair<MessageContext, Ability> pair) {
+        pair.b().consumer().accept(pair.a());
+        return pair;
     }
 
-    Tuple2<MessageContext, Ability> getContext(Tuple3<Update, Ability, String[]> tuple) {
-        Message message = tuple.getT1().getMessage();
+    Pair<MessageContext, Ability> getContext(Trio<Update, Ability, String[]> trio) {
+        Message message = trio.a().getMessage();
         EndUser user = new EndUser(message.getFrom());
 
-        return Tuples.of(new MessageContext(tuple.getT1(), user, message.getChatId(), tuple.getT3()), tuple.getT2());
+        return Pair.of(new MessageContext(trio.a(), user, message.getChatId(), trio.c()), trio.b());
     }
 
     boolean checkBlacklist(Update update) {
-        return !db.<Integer>getSet(BLACKLIST).contains(update.getMessage().getFrom().getId());
+        Integer id = update.getMessage().getFrom().getId();
+
+        return id == creatorId() || !db.<Integer>getSet(BLACKLIST).contains(id);
     }
 
-    boolean checkInput(Tuple3<Update, Ability, String[]> tuple) {
-        String[] tokens = tuple.getT3();
-        int abilityTokens = tuple.getT2().tokens();
+    boolean checkInput(Trio<Update, Ability, String[]> trio) {
+        String[] tokens = trio.c();
+        int abilityTokens = trio.b().tokens();
 
         return abilityTokens == 0 || (tokens.length > 0 && tokens.length == abilityTokens);
     }
 
-    boolean checkLocality(Tuple3<Update, Ability, String[]> tuple) {
-        Message msg = tuple.getT1().getMessage();
+    boolean checkLocality(Trio<Update, Ability, String[]> trio) {
+        Message msg = trio.a().getMessage();
         Locality locality = msg.isUserMessage() ? USER : GROUP;
-        Locality abilityLocality = tuple.getT2().locality();
+        Locality abilityLocality = trio.b().locality();
         return abilityLocality == ALL || locality == abilityLocality;
     }
 
-    boolean checkPrivacy(Tuple3<Update, Ability, String[]> tuple) {
-        EndUser user = new EndUser(tuple.getT1().getMessage().getFrom());
-        boolean isUserMsg = tuple.getT1().getMessage().isUserMessage();
-        Long groupId = tuple.getT1().getMessage().getChatId();
+    boolean checkPrivacy(Trio<Update, Ability, String[]> trio) {
+        EndUser user = new EndUser(trio.a().getMessage().getFrom());
+        boolean isUserMsg = trio.a().getMessage().isUserMessage();
+        Long groupId = trio.a().getMessage().getChatId();
         Privacy privacy;
         int id = user.id();
         // Sonar
@@ -472,7 +473,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
             privacy = isSuperAdmin(id) ? SUPERADMIN : !isUserMsg && isAdmin(id, groupId) ? ADMIN : PUBLIC;
         }
 
-        return privacy.compareTo(tuple.getT2().privacy()) >= 0;
+        return privacy.compareTo(trio.b().privacy()) >= 0;
     }
 
     private boolean isCreator(int id) {
@@ -487,16 +488,16 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         return db.<Integer>getGroupSet(ADMINS, groupId).contains(id);
     }
 
-    boolean validateAbility(Tuple2<Update, Ability> tuple) {
-        return tuple.getT2() != null;
+    boolean validateAbility(Trio<Update, Ability, String[]> trio) {
+        return trio.b() != null;
     }
 
-    Tuple3<Update, Ability, String[]> getAbility(Update update) {
+    Trio<Update, Ability, String[]> getAbility(Update update) {
         // Handle updates without messages
         // Passing through this function means that the global flags have passed
         Message msg = update.getMessage();
         if (!update.hasMessage() || !(msg.hasText() || nonNull(msg.getCaption())))
-            return Tuples.of(update, abilities.get(DEFAULT), new String[]{});
+            return Trio.of(update, abilities.get(DEFAULT), new String[]{});
 
         // Priority goes to text before captions
         String[] tokens = msg.hasText() ?
@@ -506,10 +507,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         if (tokens[0].startsWith("/")) {
             Ability ability = abilities.get(tokens[0].substring(1));
             tokens = Arrays.copyOfRange(tokens, 1, tokens.length);
-            return Tuples.of(update, ability, tokens);
+            return Trio.of(update, ability, tokens);
         } else {
             Ability ability = abilities.get(DEFAULT);
-            return Tuples.of(update, ability, tokens);
+            return Trio.of(update, ability, tokens);
         }
     }
 
@@ -533,9 +534,9 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         return update;
     }
 
-    boolean checkMessageFlags(Tuple3<Update, Ability, String[]> tuple) {
-        Ability ability = tuple.getT2();
-        Update update = tuple.getT1();
+    boolean checkMessageFlags(Trio<Update, Ability, String[]> trio) {
+        Ability ability = trio.b();
+        Update update = trio.a();
 
         return ofNullable(ability.flags())
                 .map(flags -> stream(flags)
