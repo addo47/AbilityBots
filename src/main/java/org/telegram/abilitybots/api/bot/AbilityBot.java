@@ -11,6 +11,7 @@ import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
+import org.telegram.telegrambots.api.objects.User;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
@@ -435,35 +436,55 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     Pair<MessageContext, Ability> getContext(Trio<Update, Ability, String[]> trio) {
-        Message message = trio.a().getMessage();
-        EndUser user = new EndUser(message.getFrom());
+        Update update = trio.a();
+        EndUser user = new EndUser(getUser(update));
 
-        return Pair.of(new MessageContext(trio.a(), user, message.getChatId(), trio.c()), trio.b());
+        return Pair.of(new MessageContext(update, user, getChatId(update), trio.c()), trio.b());
     }
 
     boolean checkBlacklist(Update update) {
-        Integer id = getFrom(update);
+        Integer id = getUser(update).getId();
 
         return id == creatorId() || !db.<Integer>getSet(BLACKLIST).contains(id);
     }
 
-    Integer getFrom(Update update) {
+    User getUser(Update update) {
         if (MESSAGE.test(update)) {
-            return update.getMessage().getFrom().getId();
+            return update.getMessage().getFrom();
         } else if (CALLBACK_QUERY.test(update)) {
-            return update.getCallbackQuery().getFrom().getId();
+            return update.getCallbackQuery().getFrom();
         } else if (INLINE_QUERY.test(update)) {
-            return update.getInlineQuery().getFrom().getId();
+            return update.getInlineQuery().getFrom();
         } else if (CHANNEL_POST.test(update)) {
-            return update.getChannelPost().getFrom().getId();
+            return update.getChannelPost().getFrom();
         } else if (EDITED_CHANNEL_POST.test(update)) {
-            return update.getEditedChannelPost().getFrom().getId();
+            return update.getEditedChannelPost().getFrom();
         } else if (EDITED_MESSAGE.test(update)) {
-            return update.getEditedMessage().getFrom().getId();
+            return update.getEditedMessage().getFrom();
         } else if (CHOSEN_INLINE_QUERY.test(update)) {
-            return update.getChosenInlineQuery().getFrom().getId();
+            return update.getChosenInlineQuery().getFrom();
         } else {
-            throw new IllegalStateException("Could not retrieve originating user ID from update (checking against blacklist)");
+            throw new IllegalStateException("Could not retrieve originating user ID from update");
+        }
+    }
+
+    Long getChatId(Update update) {
+        if (MESSAGE.test(update)) {
+            return update.getMessage().getChatId();
+        } else if (CALLBACK_QUERY.test(update)) {
+            return update.getCallbackQuery().getMessage().getChatId();
+        } else if (INLINE_QUERY.test(update)) {
+            return (long) update.getInlineQuery().getFrom().getId();
+        } else if (CHANNEL_POST.test(update)) {
+            return update.getChannelPost().getChatId();
+        } else if (EDITED_CHANNEL_POST.test(update)) {
+            return update.getEditedChannelPost().getChatId();
+        } else if (EDITED_MESSAGE.test(update)) {
+            return update.getEditedMessage().getChatId();
+        } else if (CHOSEN_INLINE_QUERY.test(update)) {
+            return (long) update.getChosenInlineQuery().getFrom().getId();
+        } else {
+            throw new IllegalStateException("Could not retrieve originating chat ID from update");
         }
     }
 
@@ -536,7 +557,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     Update addUser(Update update) {
-        EndUser endUser = new EndUser(update.getMessage().getFrom());
+        EndUser endUser = new EndUser(getUser(update));
         Set<EndUser> set = db.getSet(USERS);
 
         Optional<EndUser> optUser = set.stream().filter(user -> user.id() == endUser.id()).findAny();
