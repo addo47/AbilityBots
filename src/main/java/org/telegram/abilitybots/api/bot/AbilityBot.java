@@ -442,9 +442,27 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     boolean checkBlacklist(Update update) {
-        Integer id = update.getMessage().getFrom().getId();
+        Integer id = getFrom(update);
 
         return id == creatorId() || !db.<Integer>getSet(BLACKLIST).contains(id);
+    }
+
+    Integer getFrom(Update update) {
+        if (CALLBACK_QUERY.test(update)) {
+            return update.getCallbackQuery().getFrom().getId();
+        } else if (INLINE_QUERY.test(update)) {
+            return update.getInlineQuery().getFrom().getId();
+        } else if (CHANNEL_POST.test(update)) {
+            return update.getChannelPost().getFrom().getId();
+        } else if (EDITED_CHANNEL_POST.test(update)) {
+            return update.getEditedChannelPost().getFrom().getId();
+        } else if (EDITED_MESSAGE.test(update)) {
+            return update.getEditedMessage().getFrom().getId();
+        } else if (CHOSEN_INLINE_QUERY.test(update)) {
+            return update.getChosenInlineQuery().getFrom().getId();
+        } else {
+            throw new IllegalStateException("Could not retrieve originating user ID from update (checking against blacklist)");
+        }
     }
 
     boolean checkInput(Trio<Update, Ability, String[]> trio) {
