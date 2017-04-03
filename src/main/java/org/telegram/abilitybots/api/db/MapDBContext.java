@@ -3,6 +3,8 @@ package org.telegram.abilitybots.api.db;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -12,10 +14,12 @@ import org.telegram.telegrambots.logging.BotLogger;
 import java.io.IOException;
 import java.util.*;
 
+import static com.google.common.collect.Iterables.contains;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.StreamSupport.stream;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -84,17 +88,21 @@ public class MapDBContext implements DBContext {
 
     @Override
     public <T> List<T> getGroupList(String name, long id) {
-        return getList(format("%s-%d", name, id));
+        return getList(formatGroupData(name, id));
     }
 
     @Override
     public <K, V> Map<K, V> getGroupMap(String name, long id) {
-        return getMap(format("%s-%d", name, id));
+        return getMap(formatGroupData(name, id));
     }
 
     @Override
     public <T> Set<T> getGroupSet(String name, long id) {
-        return getSet(format("%s-%d", name, id));
+        return getSet(formatGroupData(name, id));
+    }
+
+    private String formatGroupData(String name, long id) {
+        return format("%s-%d", name, id);
     }
 
     @Override
@@ -217,6 +225,11 @@ public class MapDBContext implements DBContext {
                 ((Map) struct).clear();
         });
         commit();
+    }
+
+    @Override
+    public boolean hasDataStructure(String name, long id) {
+        return contains(db.getAllNames(), formatGroupData(name, id));
     }
 
     @Override

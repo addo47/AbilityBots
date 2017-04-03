@@ -488,6 +488,24 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         }
     }
 
+    boolean isUserMessage(Update update) {
+        if (MESSAGE.test(update)) {
+            return update.getMessage().isUserMessage();
+        } else if (CALLBACK_QUERY.test(update)) {
+            return update.getCallbackQuery().getMessage().isUserMessage();
+        } else if (CHANNEL_POST.test(update)) {
+            return update.getChannelPost().isUserMessage();
+        } else if (EDITED_CHANNEL_POST.test(update)) {
+            return update.getEditedChannelPost().isUserMessage();
+        } else if (EDITED_MESSAGE.test(update)) {
+            return update.getEditedMessage().isUserMessage();
+        } else if (CHOSEN_INLINE_QUERY.test(update) || INLINE_QUERY.test(update)) {
+            return true;
+        } else {
+            throw new IllegalStateException("Could not retrieve update context origin (user/group)");
+        }
+    }
+
     boolean checkInput(Trio<Update, Ability, String[]> trio) {
         String[] tokens = trio.c();
         int abilityTokens = trio.b().tokens();
@@ -496,16 +514,17 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     boolean checkLocality(Trio<Update, Ability, String[]> trio) {
-        Message msg = trio.a().getMessage();
-        Locality locality = msg.isUserMessage() ? USER : GROUP;
+        Update update = trio.a();
+        Locality locality = isUserMessage(update) ? USER : GROUP;
         Locality abilityLocality = trio.b().locality();
         return abilityLocality == ALL || locality == abilityLocality;
     }
 
     boolean checkPrivacy(Trio<Update, Ability, String[]> trio) {
-        EndUser user = new EndUser(trio.a().getMessage().getFrom());
-        boolean isUserMsg = trio.a().getMessage().isUserMessage();
-        Long groupId = trio.a().getMessage().getChatId();
+        Update update = trio.a();
+        EndUser user = new EndUser(getUser(update));
+        boolean isUserMsg = isUserMessage(update);
+        Long groupId = getChatId(update);
         Privacy privacy;
         int id = user.id();
         // Sonar
@@ -527,7 +546,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     private boolean isAdmin(Integer id, long groupId) {
-        return db.<Integer>getGroupSet(ADMINS, groupId).contains(id);
+        if (db.hasDataStructure(ADMINS, groupId))
+            return db.<Integer>getGroupSet(ADMINS, groupId).contains(id);
+        else
+            return false;
     }
 
     boolean validateAbility(Trio<Update, Ability, String[]> trio) {

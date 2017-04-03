@@ -38,4 +38,6 @@ public interface DBContext extends Closeable{
     void commit();
 
     void clear();
+
+    boolean hasDataStructure(String name, long id);
 }
