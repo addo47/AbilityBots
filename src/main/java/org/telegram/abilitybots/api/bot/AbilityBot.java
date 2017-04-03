@@ -448,7 +448,9 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     Integer getFrom(Update update) {
-        if (CALLBACK_QUERY.test(update)) {
+        if (MESSAGE.test(update)) {
+            return update.getMessage().getFrom().getId();
+        } else if (CALLBACK_QUERY.test(update)) {
             return update.getCallbackQuery().getFrom().getId();
         } else if (INLINE_QUERY.test(update)) {
             return update.getInlineQuery().getFrom().getId();
