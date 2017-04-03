@@ -144,6 +144,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                                 String info = entry.getValue().info();
                                 return format("%s - %s", name, info);
                             })
+                            .sorted()
                             .reduce((a, b) -> format("%s%n%s", a, b)).orElse("No public commands found.");
                     sender.send(commands, ctx.chatId());
                 })
@@ -544,7 +545,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                 .orElse(true);
     }
 
-    boolean checkGlobalFlags(Update update) {
+    protected boolean checkGlobalFlags(Update update) {
         return MESSAGE.test(update);
     }
 }

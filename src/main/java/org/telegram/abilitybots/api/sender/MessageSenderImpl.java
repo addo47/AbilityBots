@@ -46,7 +46,6 @@ public class MessageSenderImpl implements MessageSender {
 
     private Optional<Message> doSendMessage(String txt, long groupId, boolean format) {
         SendMessage smsg = new SendMessage();
-//        smsg.enableHtml(format);
         smsg.setChatId(groupId);
         smsg.setText(txt);
         smsg.enableMarkdown(format);
