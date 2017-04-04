@@ -190,11 +190,7 @@ public class AbilityBotTest {
         Message message = mock(Message.class);
         User user = mock(User.class);
 
-        when(user.getId()).thenReturn(MUSER.id());
-        when(user.getFirstName()).thenReturn(MUSER.name());
-        when(user.getUserName()).thenReturn(MUSER.username());
-        when(message.getFrom()).thenReturn(user);
-        when(update.getMessage()).thenReturn(message);
+        mockAlternateUser(update, message, user, MUSER);
 
         defaultBot.addUser(update);
 
@@ -215,17 +211,22 @@ public class AbilityBotTest {
         int sameId = MUSER.id();
         EndUser changedUser = new EndUser(newName, sameId, newUsername);
 
-        when(user.getId()).thenReturn(changedUser.id());
-        when(user.getFirstName()).thenReturn(changedUser.name());
-        when(user.getUserName()).thenReturn(changedUser.username());
-        when(message.getFrom()).thenReturn(user);
-        when(update.getMessage()).thenReturn(message);
+        mockAlternateUser(update, message, user, changedUser);
 
         defaultBot.addUser(update);
 
         Set<EndUser> actual = db.getSet(USERS);
         Set<EndUser> expected = newHashSet(changedUser);
         assertEquals("User was not properly edited", expected, actual);
+    }
+
+    private void mockAlternateUser(Update update, Message message, User user, EndUser changedUser) {
+        when(user.getId()).thenReturn(changedUser.id());
+        when(user.getFirstName()).thenReturn(changedUser.name());
+        when(user.getUserName()).thenReturn(changedUser.username());
+        when(message.getFrom()).thenReturn(user);
+        when(update.hasMessage()).thenReturn(true);
+        when(update.getMessage()).thenReturn(message);
     }
 
     @Test
@@ -442,6 +443,7 @@ public class AbilityBotTest {
     }
 
     private void mockUser(Update update, Message message, User user) {
+        when(update.hasMessage()).thenReturn(true);
         when(update.getMessage()).thenReturn(message);
         when(message.getFrom()).thenReturn(user);
         when(user.getFirstName()).thenReturn(MUSER.name());

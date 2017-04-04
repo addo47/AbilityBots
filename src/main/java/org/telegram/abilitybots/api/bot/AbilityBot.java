@@ -249,10 +249,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         Set<Integer> blacklist = db.getSet(BLACKLIST);
 
                         if (!blacklist.contains(user))
-                            sender.sendFormatted(format("%s is *not* on the *blacklist*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s is *not* on the *blacklist*.", username), ctx.chatId());
                         else {
                             blacklist.remove(user);
-                            sender.sendFormatted(format("%s, your ban has been *lifted*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s, your ban has been *lifted*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -275,10 +275,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         boolean isAdmin = admins.contains(user) || isSuperAdmin(user);
 
                         if (isAdmin)
-                            sender.sendFormatted(format("%s is already an *admin*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s is already an *admin*.", username), ctx.chatId());
                         else {
                             admins.add(user);
-                            sender.sendFormatted(format("%s is now an *admin*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s is now an *admin*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -299,10 +299,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                     endUserId.ifPresent(id -> {
                         Set<Integer> admins = db.getGroupSet(ADMINS, ctx.chatId());
                         if (!admins.contains(id)) {
-                            sender.sendFormatted(format("%s is *not* an *admin*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s is *not* an *admin*.", username), ctx.chatId());
                         } else {
                             admins.remove(id);
-                            sender.sendFormatted(format("%s has been *demoted*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s has been *demoted*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -323,10 +323,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                     endUserId.ifPresent(id -> {
                         Set<Integer> superAdmins = db.getSet(SUPER_ADMINS);
                         if (superAdmins.contains(id))
-                            sender.sendFormatted(format("%s is already a *super admin*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s is already a *super admin*.", username), ctx.chatId());
                         else {
                             superAdmins.add(id);
-                            sender.sendFormatted(format("%s is now a *super admin*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s is now a *super admin*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -348,10 +348,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                     endUserId.ifPresent(id -> {
                         Set<Integer> superAdmins = db.getSet(SUPER_ADMINS);
                         if (!superAdmins.contains(id)) {
-                            sender.sendFormatted(format("%s is *not* a *super admin*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s is *not* a *super admin*.", username), ctx.chatId());
                         } else {
                             superAdmins.remove(id);
-                            sender.sendFormatted(format("%s has been *demoted*.", username), ctx.chatId());
+                            sender.sendFormatted(format("@%s has been *demoted*.", username), ctx.chatId());
                         }
                     });
                 })
@@ -569,13 +569,18 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                 msg.getCaption().split(" ");
 
         if (tokens[0].startsWith("/")) {
-            Ability ability = abilities.get(tokens[0].substring(1));
+            String abilityToken = stripBotUsername(tokens[0].substring(1));
+            Ability ability = abilities.get(abilityToken);
             tokens = Arrays.copyOfRange(tokens, 1, tokens.length);
             return Trio.of(update, ability, tokens);
         } else {
             Ability ability = abilities.get(DEFAULT);
             return Trio.of(update, ability, tokens);
         }
+    }
+
+    private String stripBotUsername(String token) {
+        return token.replace("@".concat(botUsername), "");
     }
 
     Update addUser(Update update) {
