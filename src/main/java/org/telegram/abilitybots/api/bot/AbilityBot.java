@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -35,6 +36,8 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
+import static java.util.regex.Pattern.CASE_INSENSITIVE;
+import static java.util.regex.Pattern.compile;
 import static java.util.stream.Collectors.toMap;
 import static jersey.repackaged.com.google.common.base.Throwables.propagate;
 import static org.telegram.abilitybots.api.db.MapDBContext.onlineInstance;
@@ -580,7 +583,9 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     private String stripBotUsername(String token) {
-        return token.replace("@".concat(botUsername), "");
+        return compile(format("@%s", botUsername), CASE_INSENSITIVE)
+                .matcher(token)
+                .replaceAll("");
     }
 
     Update addUser(Update update) {
