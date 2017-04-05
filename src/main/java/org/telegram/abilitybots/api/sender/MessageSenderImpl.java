@@ -1,6 +1,7 @@
 package org.telegram.abilitybots.api.sender;
 
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
@@ -42,6 +43,15 @@ public class MessageSenderImpl implements MessageSender {
             BotLogger.log(WARNING, TAG, "Error while sending message!", e);
         }
         return empty();
+    }
+
+    @Override
+    public void edit(EditMessageText message) {
+        try {
+            bot.editMessageText(message);
+        } catch (TelegramApiException e) {
+            BotLogger.log(WARNING, TAG, "Error while editing message!", e);
+        }
     }
 
     private Optional<Message> doSendMessage(String txt, long groupId, boolean format) {

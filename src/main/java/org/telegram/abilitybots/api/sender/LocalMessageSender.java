@@ -1,6 +1,7 @@
 package org.telegram.abilitybots.api.sender;
 
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.logging.BotLogger;
@@ -41,6 +42,11 @@ public class LocalMessageSender implements MessageSender {
     public Optional<Message> send(SendMessage message) {
         BotLogger.info(TAG, format("Sending SendMessage [%s]", message.toString()));
         return empty();
+    }
+
+    @Override
+    public void edit(EditMessageText message) {
+        BotLogger.info(TAG, format("Editing EditMessagText [%s]", message.toString()));
     }
 
     public List<String> log() {

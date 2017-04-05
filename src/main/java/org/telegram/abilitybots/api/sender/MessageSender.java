@@ -1,6 +1,7 @@
 package org.telegram.abilitybots.api.sender;
 
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.Message;
 
 import java.util.Optional;
@@ -12,4 +13,5 @@ public interface MessageSender {
     Optional<Message> send(String message, long id);
     Optional<Message> sendFormatted(String message, long id);
     Optional<Message> send(SendMessage message);
+    void edit(EditMessageText message);
 }
