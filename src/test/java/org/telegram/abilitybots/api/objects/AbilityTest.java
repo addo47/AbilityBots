@@ -6,9 +6,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.telegram.abilitybots.api.bot.DefaultBot.getDefaultBuilder;
 
-/**
- * Created by Addo on 2/12/2017.
- */
 public class AbilityTest {
     @Test(expected = IllegalArgumentException.class)
     public void argumentsCannotBeNegative() {
@@ -20,14 +17,14 @@ public class AbilityTest {
         getDefaultBuilder().name("").build();
     }
 
-    @Test(expected = NullPointerException.class)
-    public void consumerCannotBeNull() {
-        getDefaultBuilder().consumer(null).build();
+    @Test(expected = IllegalArgumentException.class)
+    public void nameCannotBeNull() {
+        getDefaultBuilder().name(null).build();
     }
 
     @Test(expected = NullPointerException.class)
-    public void nameCannotBeNull() {
-        getDefaultBuilder().name(null).build();
+    public void consumerCannotBeNull() {
+        getDefaultBuilder().consumer(null).build();
     }
 
     @Test(expected = NullPointerException.class)
@@ -50,10 +47,12 @@ public class AbilityTest {
         Ability ability1 = getDefaultBuilder().build();
         Ability ability2 = getDefaultBuilder().build();
         Ability ability3 = getDefaultBuilder().name("anotherconsumer").build();
-        Ability ability4 = getDefaultBuilder().consumer((context) -> {}).build();
+        Ability ability4 = getDefaultBuilder().consumer((context) -> {
+        }).build();
 
         assertEquals("Abilities should not be equal", ability1, ability2);
         assertEquals("Abilities should not be equal", ability1, ability4);
         assertNotEquals("Abilities should be equal", ability1, ability3);
     }
 }
+

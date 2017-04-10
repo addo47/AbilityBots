@@ -3,9 +3,6 @@ package org.telegram.abilitybots.api.db;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import org.jetbrains.annotations.NotNull;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.telegram.abilitybots.api.util.Pair;
@@ -14,7 +11,6 @@ import org.telegram.telegrambots.logging.BotLogger;
 import java.io.IOException;
 import java.util.*;
 
-import static com.google.common.collect.Iterables.contains;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
@@ -22,68 +18,58 @@ import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.StreamSupport.stream;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.mapdb.Serializer.JAVA;
 
 public class MapDBContext implements DBContext {
     private static final String TAG = DBContext.class.getSimpleName();
 
-    private DB db;
-    private static DBContext instance;
+    private final DB db;
     private final ObjectMapper objectMapper;
 
-    private MapDBContext(boolean online) {
-        if (online)
-            db = DBMaker
-                    .fileDB("database")
-                    .fileMmapEnableIfSupported()
-                    .closeOnJvmShutdown()
-                    .transactionEnable()
-                    .make();
-        else
-            db = DBMaker
-                    .fileDB("database-offline")
-                    .fileMmapEnableIfSupported()
-                    .closeOnJvmShutdown()
-                    .cleanerHackEnable()
-                    .transactionEnable()
-                    .fileDeleteAfterClose()
-                    .make();
+    public MapDBContext(DB db) {
+        this.db = db;
 
         objectMapper = new ObjectMapper();
         objectMapper.enableDefaultTyping();
     }
 
-    public static DBContext onlineInstance() {
-        return getDbContext(true);
+    public static DBContext onlineInstance(String name) {
+        DB db = DBMaker
+                .fileDB(name)
+                .fileMmapEnableIfSupported()
+                .closeOnJvmShutdown()
+                .transactionEnable()
+                .make();
+
+        return new MapDBContext(db);
     }
 
-    public static DBContext offlineInstance() {
-        return getDbContext(false);
-    }
+    public static DBContext offlineInstance(String name) {
+        DB db = DBMaker
+                .fileDB(name)
+                .fileMmapEnableIfSupported()
+                .closeOnJvmShutdown()
+                .cleanerHackEnable()
+                .transactionEnable()
+                .fileDeleteAfterClose()
+                .make();
 
-    @NotNull
-    private static DBContext getDbContext(boolean online) {
-        if (instance == null) {
-            return instance = new MapDBContext(online);
-        } else {
-            return instance;
-        }
+        return new MapDBContext(db);
     }
 
     @Override
     public <T> List<T> getList(String name) {
-        return (List<T>) db.indexTreeList(name, JAVA).createOrOpen();
+        return (List<T>) db.<T>indexTreeList(name, JAVA).createOrOpen();
     }
 
     @Override
     public <K, V> Map<K, V> getMap(String name) {
-        return db.hashMap(name, JAVA, JAVA).createOrOpen();
+        return db.<K, V>hashMap(name, JAVA, JAVA).createOrOpen();
     }
 
     @Override
     public <T> Set<T> getSet(String name) {
-        return (Set<T>) db.hashSet(name, JAVA).createOrOpen();
+        return (Set<T>) db.<T>hashSet(name, JAVA).createOrOpen();
     }
 
     @Override
@@ -101,24 +87,16 @@ public class MapDBContext implements DBContext {
         return getSet(formatGroupData(name, id));
     }
 
-    private String formatGroupData(String name, long id) {
+    public static String formatGroupData(String name, long id) {
         return format("%s-%d", name, id);
     }
 
     @Override
     public String summary() {
         return stream(db.getAllNames().spliterator(), true)
-                .map(name -> {
-                    Object struct = db.get(name);
-                    if (struct instanceof Set)
-                        return format("%s - Set - %d\n", name, ((Set) struct).size());
-                    else if (struct instanceof List)
-                        return format("%s - List - %d\n", name, ((List) struct).size());
-                    else if (struct instanceof Map)
-                        return format("%s - Map - %d\n", name, ((Map) struct).size());
-                    else
-                        return format("%s - N/A\n", name);
-                }).reduce(EMPTY, String::concat).trim();
+                .map(this::info)
+                .reduce(new StringJoiner("\n"), StringJoiner::add, StringJoiner::merge)
+                .toString();
     }
 
     @Override
@@ -180,34 +158,19 @@ public class MapDBContext implements DBContext {
     }
 
     @Override
-    public String setInfo(String setName) {
-        return writeAsString(getSet(setName));
-    }
+    public String info(String name) {
+        Object struct = db.get(name);
+        if (isNull(struct))
+            throw new IllegalStateException(format("DB structure with name [%s] does not exist", name));
 
-    @Override
-    public String groupSetInfo(String setName, long id) {
-        return writeAsString(getGroupSet(setName, id));
-    }
-
-
-    @Override
-    public String listInfo(String listName) {
-        return writeAsString(getList(listName));
-    }
-
-    @Override
-    public String groupListInfo(String listName, long id) {
-        return writeAsString(getGroupList(listName, id));
-    }
-
-    @Override
-    public String mapInfo(String mapName) {
-        return writeAsString(getMap(mapName));
-    }
-
-    @Override
-    public String groupMapInfo(String mapName, long id) {
-        return writeAsString(getGroupMap(mapName, id));
+        if (struct instanceof Set)
+            return format("%s - Set - %d", name, ((Set) struct).size());
+        else if (struct instanceof List)
+            return format("%s - List - %d", name, ((List) struct).size());
+        else if (struct instanceof Map)
+            return format("%s - Map - %d", name, ((Map) struct).size());
+        else
+            return format("%s - %s", name, struct.getClass().getSimpleName());
     }
 
     @Override
@@ -228,15 +191,13 @@ public class MapDBContext implements DBContext {
     }
 
     @Override
-    public boolean hasDataStructure(String name, long id) {
-        return contains(db.getAllNames(), formatGroupData(name, id));
+    public boolean contains(String name) {
+        return db.exists(name);
     }
 
     @Override
     public void close() throws IOException {
         db.close();
-        db = null;
-        instance = null;
     }
 
     private String writeAsString(Object obj) {

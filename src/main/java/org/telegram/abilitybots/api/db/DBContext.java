@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * Created by Addo on 2/11/2017.
  */
-public interface DBContext extends Closeable{
+public interface DBContext extends Closeable {
     <T> List<T> getList(String name);
 
     <K, V> Map<K, V> getMap(String name);
@@ -24,20 +24,14 @@ public interface DBContext extends Closeable{
     String summary();
 
     Object backup();
+
     boolean recover(Object backup);
 
-    String setInfo(String setName);
-    String groupSetInfo(String setName, long id);
-
-    String listInfo(String listName);
-    String groupListInfo(String listName, long id);
-
-    String mapInfo(String mapName);
-    String groupMapInfo(String mapName, long id);
+    String info(String name);
 
     void commit();
 
     void clear();
 
-    boolean hasDataStructure(String name, long id);
+    boolean contains(String name);
 }

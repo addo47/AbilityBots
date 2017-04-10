@@ -3,44 +3,74 @@ package org.telegram.abilitybots.api.objects;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
 import org.telegram.telegrambots.api.objects.User;
 
 import java.io.Serializable;
+import java.util.Objects;
+import java.util.StringJoiner;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class EndUser implements Serializable {
-    @JsonProperty("name")
-    private final String name;
     @JsonProperty("id")
     private final Integer id;
+    @JsonProperty("firstName")
+    private final String firstName;
+    @JsonProperty("lastName")
+    private final String lastName;
     @JsonProperty("username")
     private final String username;
 
     @JsonCreator
-    public EndUser(@JsonProperty("name") String name, @JsonProperty("id") Integer id, @JsonProperty("username")String username) {
-        this.name = name;
+    public EndUser(@JsonProperty("id") Integer id,
+                   @JsonProperty("firstName") String firstName,
+                   @JsonProperty("lastName") String lastName,
+                   @JsonProperty("username") String username) {
         this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.username = username;
     }
 
-    public EndUser(User user) {
-        name = user.getFirstName() + (isNullOrEmpty(user.getLastName()) ? "" : " " + user.getLastName());
-        id = user.getId();
-        username = user.getUserName();
+    public static EndUser fromUser(User user) {
+        return new EndUser(user.getId(), user.getFirstName(), user.getLastName(), user.getUserName());
+    }
+
+    public int id() {
+        return id;
+    }
+
+    public String firstName() {
+        return firstName;
+    }
+
+    public String lastName() {
+        return lastName;
     }
 
     public String username() {
         return username;
     }
 
-    public String name() {
-        return name;
+    public String fullName() {
+        StringJoiner name = new StringJoiner(" ");
+
+        if (!isEmpty(firstName))
+            name.add(firstName);
+        if (!isEmpty(lastName))
+            name.add(lastName);
+
+        return name.toString();
     }
 
-    public int id() {
-        return id;
+    public String shortName() {
+        if (!isEmpty(firstName))
+            return firstName;
+
+        if (!isEmpty(lastName))
+            return lastName;
+
+        return username;
     }
 
     @Override
@@ -49,21 +79,26 @@ public class EndUser implements Serializable {
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        EndUser mUser = (EndUser) o;
-        return Objects.equal(id, mUser.id);
+
+        EndUser endUser = (EndUser) o;
+        return Objects.equals(id, endUser.id) &&
+                Objects.equals(firstName, endUser.firstName) &&
+                Objects.equals(lastName, endUser.lastName) &&
+                Objects.equals(username, endUser.username);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
+        return Objects.hash(id, firstName, lastName, username);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("name", name)
                 .add("id", id)
-                .add("creatorId", username)
+                .add("firstName", firstName)
+                .add("lastName", lastName)
+                .add("username", username)
                 .toString();
     }
 }

@@ -5,12 +5,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.*;
-import org.telegram.abilitybots.api.sender.LocalMessageSender;
+import org.telegram.abilitybots.api.sender.MessageSender;
 import org.telegram.abilitybots.api.util.Pair;
 import org.telegram.abilitybots.api.util.Trio;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.User;
+
+import java.io.IOException;
 import java.util.Set;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -18,8 +20,8 @@ import static java.util.Collections.emptySet;
 import static org.apache.commons.lang3.ArrayUtils.addAll;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
 import static org.telegram.abilitybots.api.bot.AbilityBot.*;
 import static org.telegram.abilitybots.api.bot.DefaultBot.getDefaultBuilder;
 import static org.telegram.abilitybots.api.db.MapDBContext.offlineInstance;
@@ -33,16 +35,19 @@ public class AbilityBotTest {
     public static final String[] EMPTY_ARRAY = {};
     public static final long GROUP_ID = 10L;
     public static final String[] TEXT = {"test"};
-    public static final EndUser MUSER = new EndUser("name", 1, "username");
-    public static final EndUser CREATOR = new EndUser("creator", 1337, "creatorusername");
+    public static final EndUser MUSER = new EndUser(1, "first", "first", "last");
+    public static final EndUser CREATOR = new EndUser(1337, "creatorFirst", "creatorLast", "creatorUsername");
 
     private DefaultBot defaultBot;
     private DBContext db;
+    private MessageSender sender;
 
     @Before
     public void setUp() {
-        db = offlineInstance();
+        db = offlineInstance("db");
         defaultBot = new DefaultBot(EMPTY, EMPTY, db);
+        sender = mock(MessageSender.class);
+        defaultBot.setSender(sender);
     }
 
     @Test
@@ -207,9 +212,10 @@ public class AbilityBotTest {
         User user = mock(User.class);
 
         String newUsername = MUSER.username() + "-test";
-        String newName = MUSER.name() + "-test";
+        String newFirstName = MUSER.firstName() + "-test";
+        String newLastName = MUSER.lastName() + "-test";
         int sameId = MUSER.id();
-        EndUser changedUser = new EndUser(newName, sameId, newUsername);
+        EndUser changedUser = new EndUser(sameId, newFirstName, newLastName, newUsername);
 
         mockAlternateUser(update, message, user, changedUser);
 
@@ -222,7 +228,8 @@ public class AbilityBotTest {
 
     private void mockAlternateUser(Update update, Message message, User user, EndUser changedUser) {
         when(user.getId()).thenReturn(changedUser.id());
-        when(user.getFirstName()).thenReturn(changedUser.name());
+        when(user.getFirstName()).thenReturn(changedUser.firstName());
+        when(user.getLastName()).thenReturn(changedUser.lastName());
         when(user.getUserName()).thenReturn(changedUser.username());
         when(message.getFrom()).thenReturn(user);
         when(update.hasMessage()).thenReturn(true);
@@ -430,23 +437,23 @@ public class AbilityBotTest {
         MessageContext context = mock(MessageContext.class);
         when(context.chatId()).thenReturn(GROUP_ID);
 
-        defaultBot.commands().consumer().accept(context);
+        defaultBot.reportCommands().consumer().accept(context);
 
-        String actual = ((LocalMessageSender)defaultBot.sender).log().get(0);
-        String expected = "default - dis iz default command";
-        assertEquals("Actual commands don't match the expected", expected, actual);
+        verify(sender, times(1)).send("default - dis iz default command", GROUP_ID);
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws IOException {
         db.clear();
+        db.close();
     }
 
     private void mockUser(Update update, Message message, User user) {
         when(update.hasMessage()).thenReturn(true);
         when(update.getMessage()).thenReturn(message);
         when(message.getFrom()).thenReturn(user);
-        when(user.getFirstName()).thenReturn(MUSER.name());
+        when(user.getFirstName()).thenReturn(MUSER.firstName());
+        when(user.getLastName()).thenReturn(MUSER.lastName());
         when(user.getId()).thenReturn(MUSER.id());
         when(user.getUserName()).thenReturn(MUSER.username());
     }

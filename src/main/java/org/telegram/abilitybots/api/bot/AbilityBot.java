@@ -12,7 +12,6 @@ import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.User;
-import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import org.telegram.telegrambots.logging.BotLogger;
@@ -22,12 +21,12 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -35,13 +34,16 @@ import static java.time.ZonedDateTime.now;
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.function.Function.identity;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
 import static java.util.stream.Collectors.toMap;
 import static jersey.repackaged.com.google.common.base.Throwables.propagate;
+import static org.telegram.abilitybots.api.db.MapDBContext.formatGroupData;
 import static org.telegram.abilitybots.api.db.MapDBContext.onlineInstance;
 import static org.telegram.abilitybots.api.objects.Ability.builder;
+import static org.telegram.abilitybots.api.objects.EndUser.fromUser;
 import static org.telegram.abilitybots.api.objects.Flag.*;
 import static org.telegram.abilitybots.api.objects.Locality.*;
 import static org.telegram.abilitybots.api.objects.Privacy.*;
@@ -70,6 +72,9 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     public static final String PROMOTE = "promote";
     public static final String DEMOTE = "demote";
     public static final String UNBAN = "unban";
+    public static final String BACKUP = "backup";
+    public static final String RECOVER = "recover";
+    public static final String COMMANDS = "commands";
 
     protected final DBContext db;
     protected MessageSender sender;
@@ -80,30 +85,25 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     // Command registry
     private Map<String, Ability> abilities;
 
-    public AbilityBot(String botToken, String botUsername, DBContext db, Class<? extends MessageSender> clazz) {
+    public AbilityBot(String botToken, String botUsername, DBContext db) {
         this.botToken = botToken;
         this.botUsername = botUsername;
         this.db = db;
-
-        try {
-            this.sender = clazz.getConstructor(DefaultAbsSender.class).newInstance(this);
-        } catch (Exception e) {
-            BotLogger.error(TAG, "Couldn't construct MessageSender. If this is a custom implementation, make sure to have a constructor that requires a DefaultAbsSender instance.", e);
-            throw propagate(e);
-        }
+        this.sender = new MessageSenderImpl(this);
 
         registerAbilities(this);
     }
 
     public AbilityBot(String token, String username) {
-        this(token, username, onlineInstance(), MessageSenderImpl.class);
+        this(token, username, onlineInstance(username));
     }
 
     public abstract int creatorId();
 
     @Override
     public void onUpdateReceived(Update update) {
-        BotLogger.info(format("New update [%s] received at %s", update.getUpdateId(), now()), TAG);
+        ZonedDateTime startDate = now();
+        BotLogger.info(format("New update [%s] received at %s", update.getUpdateId(), startDate), TAG);
         BotLogger.info(update.toString(), TAG);
 
         Stream.of(update)
@@ -120,7 +120,9 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                 .map(this::consumeUpdate)
                 .forEach(this::postConsumption);
 
-        BotLogger.info(format("Processing of update [%s] ended at %s", update.getUpdateId(), now()), TAG);
+        ZonedDateTime endDate = now();
+        long processingTime = SECONDS.toSeconds(endDate.toEpochSecond() - startDate.toEpochSecond());
+        BotLogger.info(format("Processing of update [%s] ended at %s%n---> Processing time: [%s s] <---%n", update.getUpdateId(), endDate, processingTime), TAG);
     }
 
     @Override
@@ -133,9 +135,9 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         return botUsername;
     }
 
-    public Ability commands() {
+    public Ability reportCommands() {
         return builder()
-                .name("commands")
+                .name(COMMANDS)
                 .locality(ALL)
                 .privacy(PUBLIC)
                 .flag(TEXT)
@@ -155,9 +157,9 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                 .build();
     }
 
-    public Ability recover() {
+    public Ability recoverDB() {
         return builder()
-                .name("recover")
+                .name(RECOVER)
                 .locality(USER)
                 .privacy(CREATOR)
                 .flag(DOCUMENT, CAPTION)
@@ -181,9 +183,9 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                 .build();
     }
 
-    public Ability backup() {
+    public Ability backupDB() {
         return builder()
-                .name("backup")
+                .name(BACKUP)
                 .locality(USER)
                 .privacy(CREATOR)
                 .input(0)
@@ -221,7 +223,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
                         // Protection from abuse
                         if (user == creatorId()) {
                             user = ctx.user().id();
-                            actualuser = getUser(user).get().name();
+                            actualuser = getUser(user).get().firstName();
                         }
 
                         Set<Integer> blacklist = db.getSet(BLACKLIST);
@@ -421,7 +423,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     private Optional<EndUser> getUser(String username) {
-        return db.<EndUser>getSet(USERS).stream().filter(user -> user.username().equals(username)).findFirst();
+        return db.<EndUser>getSet(USERS).stream().filter(user -> user.username().equalsIgnoreCase(username)).findFirst();
     }
 
     private Optional<EndUser> getUser(int id) {
@@ -440,7 +442,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
     Pair<MessageContext, Ability> getContext(Trio<Update, Ability, String[]> trio) {
         Update update = trio.a();
-        EndUser user = new EndUser(getUser(update));
+        EndUser user = fromUser(getUser(update));
 
         return Pair.of(new MessageContext(update, user, getChatId(update), trio.c()), trio.b());
     }
@@ -467,7 +469,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         } else if (CHOSEN_INLINE_QUERY.test(update)) {
             return update.getChosenInlineQuery().getFrom();
         } else {
-            throw new IllegalStateException("Could not retrieve originating user ID from update");
+            throw new IllegalStateException("Could not retrieve originating user from update");
         }
     }
 
@@ -525,7 +527,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
     boolean checkPrivacy(Trio<Update, Ability, String[]> trio) {
         Update update = trio.a();
-        EndUser user = new EndUser(getUser(update));
+        EndUser user = fromUser(getUser(update));
         boolean isUserMsg = isUserMessage(update);
         Long groupId = getChatId(update);
         Privacy privacy;
@@ -549,7 +551,8 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     private boolean isAdmin(Integer id, long groupId) {
-        if (db.hasDataStructure(ADMINS, groupId))
+        String structName = formatGroupData(ADMINS, groupId);
+        if (db.contains(structName))
             return db.<Integer>getGroupSet(ADMINS, groupId).contains(id);
         else
             return false;
@@ -589,18 +592,16 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     }
 
     Update addUser(Update update) {
-        EndUser endUser = new EndUser(getUser(update));
+        EndUser endUser = fromUser(getUser(update));
         Set<EndUser> set = db.getSet(USERS);
 
         Optional<EndUser> optUser = set.stream().filter(user -> user.id() == endUser.id()).findAny();
-        if (optUser.isPresent()) {
-            EndUser prevUser = optUser.get();
-            if (!prevUser.equals(endUser)) {
-                set.remove(prevUser);
-                set.add(endUser);
-                db.commit();
-            }
-        } else {
+        if (!optUser.isPresent()) {
+            set.add(endUser);
+            db.commit();
+            return update;
+        } else if (!optUser.get().equals(endUser)) {
+            set.remove(optUser.get());
             set.add(endUser);
             db.commit();
         }

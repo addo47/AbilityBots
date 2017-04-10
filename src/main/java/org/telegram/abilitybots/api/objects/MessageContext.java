@@ -4,9 +4,8 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import org.telegram.telegrambots.api.objects.Update;
 
-/**
- * Created by Addo on 2/5/2017.
- */
+import java.util.Arrays;
+
 public class MessageContext {
     private final EndUser user;
     private final Long chatId;
@@ -64,10 +63,11 @@ public class MessageContext {
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
+
         MessageContext that = (MessageContext) o;
         return Objects.equal(user, that.user) &&
                 Objects.equal(chatId, that.chatId) &&
-                Objects.equal(arguments, that.arguments) &&
+                Arrays.equals(arguments, that.arguments) &&
                 Objects.equal(update, that.update);
     }
 

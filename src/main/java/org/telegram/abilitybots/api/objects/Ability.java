@@ -9,8 +9,7 @@ import java.util.function.Consumer;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.containsWhitespace;
-import static org.apache.commons.lang3.StringUtils.isAlphanumeric;
+import static org.apache.commons.lang3.StringUtils.*;
 
 public final class Ability {
     private static final String TAG = Ability.class.getName();
@@ -24,10 +23,10 @@ public final class Ability {
     private final Flag[] flags;
 
     private Ability(String name, String info, Locality locality, Privacy privacy, int argNum, Consumer<MessageContext> consumer, Consumer<MessageContext> postConsumer, Flag... flags) {
-        checkArgument(!name.isEmpty(), "Method name cannot be empty");
+        checkArgument(!isEmpty(name), "Method name cannot be empty");
         checkArgument(!containsWhitespace(name), "Method name cannot contain spaces");
         checkArgument(isAlphanumeric(name), "Method name can only be alpha-numeric", name);
-        this.name = checkNotNull(name, "Please specify a valid method name");
+        this.name = name;
         this.info = info;
 
         this.locality = checkNotNull(locality, "Please specify a valid locality setting. Use the Locality enum class");
