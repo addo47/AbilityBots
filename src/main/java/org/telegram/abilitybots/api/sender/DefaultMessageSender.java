@@ -34,6 +34,8 @@ import static java.util.Optional.ofNullable;
  * <li>{@link DefaultMessageSender#send(String, long)}</li>
  * </ol>
  * </p>
+ *
+ * @author Abbas Abou Daya
  */
 public class DefaultMessageSender implements MessageSender {
   private static final String TAG = MessageSender.class.getName();
