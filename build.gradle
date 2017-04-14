@@ -19,3 +19,9 @@ dependencies {
     testCompile 'org.mockito:mockito-all:2.0.2-beta'
     testCompile 'junit:junit:4.11'
 }
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}

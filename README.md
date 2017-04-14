@@ -31,7 +31,7 @@ That is where the notion of an another layer of abstraction (AbilityBot) started
 The AbilityBot abstraction defines a new object, named **Ability**. An ability, is conditions, flags, action, post-action, replies all combined.
 As an example, here's a code-snippet of an ability that create a ***/hello*** command:
 
-```
+```java
 public Ability sayHelloWorld() {
     return Ability
               .builder()
@@ -62,7 +62,7 @@ For a more complete example of the API usages, please check the ExampleBots repo
 
 It would be a total nightmare to write something similar with the basic API, here's a snippet of how this would look like with the plain basic API.
 
-```
+```java
    @Override
    public void onUpdateReceived(Update update) {
        // Global checks...
