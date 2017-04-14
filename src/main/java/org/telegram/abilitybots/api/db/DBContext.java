@@ -11,12 +11,7 @@ import java.util.Set;
 /**
  * This interface represents the high-level methods exposed to the user when handling an {@link Update}.
  * Example usage:
- * <p>
- * <code>
- * Ability.builder().action(ctx -> {db.getSet(USERS); doSomething();})
- * </code>
- * <p>
- * <p>
+ * <p><code>Ability.builder().action(ctx -> {db.getSet(USERS); doSomething();})* </code></p>
  * {@link AbilityBot} contains a handle on the <code>db</code> that the user can use inside his declared abilities.
  *
  * @author Abbas Abou Daya
@@ -45,7 +40,7 @@ public interface DBContext extends Closeable {
   <T> Set<T> getSet(String name);
 
   /**
-   * Returns a high-level summary of the database structures (Sets, Lists, Maps, ...) present.
+   * @return a high-level summary of the database structures (Sets, Lists, Maps, ...) present.
    */
   String summary();
 

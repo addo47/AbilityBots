@@ -27,13 +27,11 @@ import static java.util.Optional.ofNullable;
 
 /**
  * The default implementation of the {@link MessageSender}. This serves as a proxy to the {@link DefaultAbsSender} methods.
- * <p>
- * <p>Most of the methods below will be directly calling the bot's similar functions. However, there are some methods introduced to ease sending messages such as:
+ * <p>Most of the methods below will be directly calling the bot's similar functions. However, there are some methods introduced to ease sending messages such as:</p>
  * <ol>
  * <li>{@link DefaultMessageSender#sendFormatted(String, long)}</li>
  * <li>{@link DefaultMessageSender#send(String, long)}</li>
  * </ol>
- * </p>
  *
  * @author Abbas Abou Daya
  */

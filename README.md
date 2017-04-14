@@ -1,11 +1,11 @@
 [![Telegram](http://trellobot.doomdns.org/telegrambadge.svg)](https://telegram.me/AbilityBots)
-
 [![Build Status](https://travis-ci.org/addo37/AbilityBots.svg?branch=master)](https://travis-ci.org/addo37/AbilityBots)
 [![Jitpack](https://jitpack.io/v/addo37/AbilityBots.svg)](https://jitpack.io/#addo37/AbilityBots)
 
+
 Motivation
 ----------
-Ever since I have started programming bots for Telegram, I have been using the Telegram Bot Java API. It is a basic and nicely done API that is a 1-to-1 translation of the HTTP API exposed by Telegram.
+Ever since I've started programming bots for Telegram, I've been using the Telegram Bot Java API. It is a basic and nicely done API that is a 1-to-1 translation of the HTTP API exposed by Telegram.
 
 Dealing with a basic API has its advantages and disadvantages. Obviously, there's nothing hidden. If it is there on Telegram, it is here in the Java API.
 When you want to implement a feature in your bot, you start asking these questions:
@@ -58,8 +58,6 @@ Here's a breakdown of what has been written above:
     * *MessageContext* provides fast accessors for the **chatId**, **user** and the underlying **update**. It also conforms to the specifications of the basic API.
 * *.post()* - the logic executed **after** your main action finishes execution
 
-For a more complete example of the API usages, please check the ExampleBots repository.
-
 It would be a total nightmare to write something similar with the basic API, here's a snippet of how this would look like with the plain basic API.
 
 ```java
@@ -92,6 +90,8 @@ It would be a total nightmare to write something similar with the basic API, her
 
 I will leave the choice to you to decide between the more **readable**, **writable** and **testable** snippet.
 
+***You can do so much more with abilities, besides plain commands. Head over to our [examples](#examples) to check out all of its features!***
+
 Objective
 ---------
 The AbilityBot abstraction intends to provide the following:
@@ -121,12 +121,14 @@ This readme was associated with the initial 1.0 release of the AbilityBot abstra
 * Enrich the bot with features requested by the community
 
 Examples
---------
-[Example Bots](https://github.com/addo37/ExampleBots)
+-------------------
+* [Example Bots](https://github.com/addo37/ExampleBots)
+
+Do you have a project that uses **AbilityBots**? Let us know!
 
 Support
 -------
-For issues and features, please use GitHub's [issues tab](https://github.com/addo37/AbilityBots/issues).
+For issues and features, please use GitHub's [issues](https://github.com/addo37/AbilityBots/issues) tab.
 
 For quick feedback, chatting or just having fun, please come and join us in our Telegram super-group.
 

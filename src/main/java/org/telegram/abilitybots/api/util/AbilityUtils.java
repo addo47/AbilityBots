@@ -18,17 +18,19 @@ public final class AbilityUtils {
   }
 
   /**
-   * @param name
-   * @return the name with the preceding "@" stripped off
+   * @param username any username
+   * @return the username with the preceding "@" stripped off
    */
-  public static String stripTag(String name) {
-    String username = name.toLowerCase();
-    username = username.startsWith("@") ? username.substring(1, username.length()) : username;
-    return username;
+  public static String stripTag(String username) {
+    String lowerCase = username.toLowerCase();
+    return lowerCase.startsWith("@") ? lowerCase.substring(1, lowerCase.length()) : lowerCase;
   }
 
   /**
    * Commits to DB.
+   *
+   * @param db the database to commit on
+   * @return a lambda consumer that takes in a {@link MessageContext}, used in post actions for abilities
    */
   public static Consumer<MessageContext> commitTo(DBContext db) {
     return ctx -> db.commit();
@@ -111,6 +113,7 @@ public final class AbilityUtils {
   }
 
   /**
+   * @param username the username to add the tag to
    * @return the username prefixed with the "@" tag.
    */
   public static String addTag(String username) {

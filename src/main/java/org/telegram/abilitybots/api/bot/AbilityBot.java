@@ -56,23 +56,23 @@ import static org.telegram.abilitybots.api.util.AbilityUtils.isUserMessage;
  * It's important to note that this bot strictly extends {@link TelegramLongPollingBot}.
  * <p>
  * All bots extending the {@link AbilityBot} get implicit abilities:
- * <ol>
+ * <ul>
  * <li>/claim - Claims this bot</li>
  * <ul>
  * <li>Sets the user as the {@link Privacy#CREATOR} of the bot</li>
  * <li>Only the user with the ID returned by {@link AbilityBot#creatorId()} can genuinely claim the bot</li>
  * </ul>
+ * <li>/commands - reports all user-defined commands (abilities)</li>
+ * <li>/backup - returns a backup of the bot database</li>
+ * <li>/recover - recovers the database</li>
  * <li>/promote <code>@username</code> - promotes user to bot admin</li>
  * <li>/demote <code>@username</code> - demotes bot admin to user</li>
- * <li>/commands - reports all user-defined commands (abilities)</li>
  * <ul>
  * <li>The same format acceptable by BotFather</li>
  * </ul>
  * <li>/ban <code>@username</code> - bans the user from accessing your bot commands and features</li>
  * <li>/unban <code>@username</code> - lifts the ban from the user</li>
- * <li>/backup - returns a backup of the bot database</li>
- * <li>/recover - recovers the database</li>
- * </ol>
+ * </ul>
  * <p>
  * Additional information of the implicit abilities are present in the methods that declare them.
  * <p>
