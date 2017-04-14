@@ -102,7 +102,7 @@ The AbilityBot abstraction intends to provide the following:
 * Proxy sender interface to enhance testability; accurate results pre-release
 
 Alongside these exciting core features of the AbilityBot, the following were introduced:
-* The bot automatically maintain an up-to-date set of all the users who contacted the bot
+* The bot automatically maintains an up-to-date set of all the users who contacted the bot
     * up-to-date: if a user changes his or her username/first-name/last-name, the bot updates it in the embedded-DB
 * Backup and recover the DB
     * Default implementation relies on JSON/Jackson
@@ -137,4 +137,6 @@ Credits
 This project would not have been made possible if it weren't for the [Telegram Bot Java API](https://github.com/rubenlagus/TelegramBots) made by [Ruben](https://github.com/rubenlagus).
 I strongly urge you to checkout that project and implement a bot to have a sense of how the basic API feels like.
 Ruben has made a great job in supplying a clear and straight-forward API that conforms to Telegram's HTTP API.
-You can join the chat that is specific to that API through [![Telegram](http://trellobot.doomdns.org/telegrambadge.svg)](https://telegram.me/JavaBotsApi)
+There is also a chat for that API.
+
+[![Telegram](http://trellobot.doomdns.org/telegrambadge.svg)](https://telegram.me/JavaBotsApi)
