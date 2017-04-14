@@ -11,6 +11,7 @@ import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageReplyMa
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.*;
 import org.telegram.telegrambots.api.objects.games.GameHighScore;
+import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updateshandlers.DownloadFileCallback;
 import org.telegram.telegrambots.updateshandlers.SentCallback;
@@ -21,14 +22,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Created by Addo on 2/9/2017.
+ * A sender interface that replicates {@link DefaultAbsSender} methods.
+ *
+ * @author Abbas Abou Daya
  */
 public interface MessageSender {
   Optional<Message> send(String message, long id);
 
   Optional<Message> sendFormatted(String message, long id);
-
-  Optional<Message> sendMessage(SendMessage message);
 
   Boolean answerInlineQuery(AnswerInlineQuery answerInlineQuery) throws TelegramApiException;
 
@@ -87,6 +88,8 @@ public interface MessageSender {
   Message sendGame(SendGame sendGame) throws TelegramApiException;
 
   Boolean deleteWebhook(DeleteWebhook deleteWebhook) throws TelegramApiException;
+
+  Message sendMessage(SendMessage sendMessage) throws TelegramApiException;
 
   void sendMessageAsync(SendMessage sendMessage, SentCallback<Message> sentCallback) throws TelegramApiException;
 
@@ -151,6 +154,4 @@ public interface MessageSender {
   Message sendAudio(SendAudio sendAudio) throws TelegramApiException;
 
   Message sendVoice(SendVoice sendVoice) throws TelegramApiException;
-
-  void edit(EditMessageText message);
 }

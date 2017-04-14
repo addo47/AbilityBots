@@ -12,10 +12,10 @@ import org.telegram.abilitybots.api.sender.MessageSender;
 import org.telegram.abilitybots.api.util.Pair;
 import org.telegram.abilitybots.api.util.Trio;
 import org.telegram.telegrambots.api.objects.*;
-import org.telegram.telegrambots.api.objects.File;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Set;
 
@@ -204,6 +204,19 @@ public class AbilityBotTest {
     actual = db.getSet(ADMINS);
     expected = emptySet();
     assertEquals("Admins set is not empty", expected, actual);
+  }
+
+  @Test
+  public void bannedCreatorPassesBlacklistCheck() {
+    db.<Integer>getSet(BLACKLIST).add(CREATOR.id());
+    Update update = mock(Update.class);
+    Message message = mock(Message.class);
+    User user = mock(User.class);
+
+    mockUser(update, message, user);
+
+    boolean notBanned = defaultBot.checkBlacklist(update);
+    assertTrue("Creator is banned", notBanned);
   }
 
   @Test

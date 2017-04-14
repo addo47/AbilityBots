@@ -6,6 +6,13 @@ import org.telegram.telegrambots.api.objects.Update;
 
 import java.util.Arrays;
 
+/**
+ * MessageContext is a wrapper class to the {@link Update}, originating end-user and the arguments present in its message (if any).
+ * <p>
+ * A user is not bound to the usage of this higher level context as it's possible to fetch the underlying {@link Update} using {@link MessageContext#update()}.
+ *
+ * @author Abbas Abou Daya
+ */
 public class MessageContext {
   private final EndUser user;
   private final Long chatId;
@@ -19,32 +26,66 @@ public class MessageContext {
     this.arguments = arguments;
   }
 
+  /**
+   * @return the originating Telegram user of this update
+   */
   public EndUser user() {
     return user;
   }
 
+  /**
+   * @return the originating chatId, maps correctly to both group and user-private chats
+   */
   public Long chatId() {
     return chatId;
   }
 
+  /**
+   * If there's no message in the update, then this will an empty array.
+   *
+   * @return the text sent by the user message.
+   */
   public String[] arguments() {
     return arguments;
   }
 
+  /**
+   * @return the first argument directly after the command
+   * @throws IllegalStateException if message has no arguments
+   */
   public String firstArg() {
+    checkLength();
     return arguments[0];
   }
 
+  /**
+   * @return the second argument directly after the command
+   * @throws IllegalStateException if message has no arguments
+   */
   public String secondArg() {
+    checkLength();
     return arguments[1 % arguments.length];
   }
 
+  /**
+   * @return the third argument directly after the command
+   * @throws IllegalStateException if message has no arguments
+   */
   public String thirdArg() {
+    checkLength();
     return arguments[2 % arguments.length];
   }
 
+  /**
+   * @return the actual update behind this context
+   */
   public Update update() {
     return update;
+  }
+
+  private void checkLength() {
+    if (arguments.length == 0)
+      throw new IllegalStateException("This message has no arguments");
   }
 
   @Override
@@ -73,6 +114,6 @@ public class MessageContext {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(user, chatId, arguments, update);
+    return Objects.hashCode(user, chatId, Arrays.hashCode(arguments), update);
   }
 }

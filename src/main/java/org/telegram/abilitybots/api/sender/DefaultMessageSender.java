@@ -10,7 +10,6 @@ import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageCaption
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.*;
-import org.telegram.telegrambots.api.objects.File;
 import org.telegram.telegrambots.api.objects.games.GameHighScore;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
@@ -18,15 +17,24 @@ import org.telegram.telegrambots.logging.BotLogger;
 import org.telegram.telegrambots.updateshandlers.DownloadFileCallback;
 import org.telegram.telegrambots.updateshandlers.SentCallback;
 
-import java.io.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
-import static java.util.logging.Level.WARNING;
 
+/**
+ * The default implementation of the {@link MessageSender}. This serves as a proxy to the {@link DefaultAbsSender} methods.
+ * <p>
+ * <p>Most of the methods below will be directly calling the bot's similar functions. However, there are some methods introduced to ease sending messages such as:
+ * <ol>
+ * <li>{@link DefaultMessageSender#sendFormatted(String, long)}</li>
+ * <li>{@link DefaultMessageSender#send(String, long)}</li>
+ * </ol>
+ * </p>
+ */
 public class DefaultMessageSender implements MessageSender {
   private static final String TAG = MessageSender.class.getName();
 
@@ -47,27 +55,13 @@ public class DefaultMessageSender implements MessageSender {
   }
 
   @Override
-  public Optional<Message> sendMessage(SendMessage message) {
+  public Boolean answerInlineQuery(AnswerInlineQuery answerInlineQuery) {
     try {
-      return ofNullable(bot.sendMessage(message));
+      return bot.answerInlineQuery(answerInlineQuery);
     } catch (TelegramApiException e) {
-      BotLogger.log(WARNING, TAG, "Error while sending message!", e);
+      e.printStackTrace();
+      return null;
     }
-    return empty();
-  }
-
-  @Override
-  public void edit(EditMessageText message) {
-    try {
-      bot.editMessageText(message);
-    } catch (TelegramApiException e) {
-      BotLogger.log(WARNING, TAG, "Error while editing message!", e);
-    }
-  }
-
-  @Override
-  public Boolean answerInlineQuery(AnswerInlineQuery answerInlineQuery) throws TelegramApiException {
-    return bot.answerInlineQuery(answerInlineQuery);
   }
 
   @Override
@@ -208,6 +202,11 @@ public class DefaultMessageSender implements MessageSender {
   @Override
   public Boolean deleteWebhook(DeleteWebhook deleteWebhook) throws TelegramApiException {
     return bot.deleteWebhook(deleteWebhook);
+  }
+
+  @Override
+  public Message sendMessage(SendMessage sendMessage) throws TelegramApiException {
+    return bot.sendMessage(sendMessage);
   }
 
   @Override
@@ -375,7 +374,13 @@ public class DefaultMessageSender implements MessageSender {
     smsg.setChatId(groupId);
     smsg.setText(txt);
     smsg.enableMarkdown(format);
+    smsg.enableHtml(format);
 
-    return sendMessage(smsg);
+    try {
+      return ofNullable(sendMessage(smsg));
+    } catch (TelegramApiException e) {
+      BotLogger.error("Could not send message", TAG, e);
+      return empty();
+    }
   }
 }

@@ -11,7 +11,14 @@ import java.util.StringJoiner;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-public class EndUser implements Serializable {
+/**
+ * This class serves the purpose of separating the basic Telegram {@link User} and the augmented {@link EndUser}.
+ * <p>
+ * It adds proper hashCode, equals, toString as well as useful utility methods such as {@link EndUser#shortName} and {@link EndUser#fullName}.
+ *
+ * @author Abbas Abou Daya
+ */
+public final class EndUser implements Serializable {
   @JsonProperty("id")
   private final Integer id;
   @JsonProperty("firstName")
@@ -36,6 +43,12 @@ public class EndUser implements Serializable {
     return new EndUser(id, firstName, lastName, username);
   }
 
+  /**
+   * Constructs an {@link EndUser} from a {@link User}.
+   *
+   * @param user the Telegram user
+   * @return an augmented end-user
+   */
   public static EndUser fromUser(User user) {
     return new EndUser(user.getId(), user.getFirstName(), user.getLastName(), user.getUserName());
   }
@@ -56,6 +69,12 @@ public class EndUser implements Serializable {
     return username;
   }
 
+  /**
+   * The full name is identified as the concatenation of the first and last name, separated by a space.
+   * This method can return an empty name if both first and last name are empty.
+   *
+   * @return the full name of the user
+   */
   public String fullName() {
     StringJoiner name = new StringJoiner(" ");
 
@@ -67,6 +86,17 @@ public class EndUser implements Serializable {
     return name.toString();
   }
 
+  /**
+   * The short name is one of the following:
+   * <ol>
+   * <li>First name</li>
+   * <li>Last name</li>
+   * <li>Username</li>
+   * </ol>
+   * The method will try to return the first valid name in the specified order.
+   *
+   * @return the short name of the user
+   */
   public String shortName() {
     if (!isEmpty(firstName))
       return firstName;

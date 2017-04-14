@@ -18,6 +18,21 @@ import static java.util.Objects.hash;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.*;
 
+/**
+ * An ability is a fully-fledged bot action that contains all the necessary information to process:
+ * <ol>
+ * <li>A response to a command</li>
+ * <li>A post-response to a command</li>
+ * <li>A reply to a sequence of actions</li>
+ * </ol>
+ * <p>
+ * In-order to instantiate an ability, you can call {@link Ability#builder()} to get the {@link AbilityBuilder}.
+ * Once you're done setting your ability, you'll call {@link AbilityBuilder#build()} to get your constructed ability.
+ * <p>
+ * The only optional fields in an ability are {@link Ability#info}, {@link Ability#postConsumer}, {@link Ability#flags} and {@link Ability#replies}.
+ *
+ * @author Abbas Abou Daya
+ */
 public final class Ability {
   private static final String TAG = Ability.class.getSimpleName();
 

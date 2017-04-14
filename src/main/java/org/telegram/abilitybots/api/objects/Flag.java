@@ -1,11 +1,20 @@
 package org.telegram.abilitybots.api.objects;
 
+import org.telegram.abilitybots.api.objects.Ability.AbilityBuilder;
 import org.telegram.telegrambots.api.objects.Update;
 
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static java.util.Objects.nonNull;
 
+/**
+ * Flags are an conditions that are applied on an {@link Update}.
+ * <p>
+ * They can be used on {@link AbilityBuilder#flag(Flag...)} and on the post conditions in {@link AbilityBuilder#reply(Consumer, Predicate[])}.
+ *
+ * @author Abbas Abou Daya
+ */
 public enum Flag implements Predicate<Update> {
   // Update Flags
   NONE(update -> true),

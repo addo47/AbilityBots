@@ -21,6 +21,12 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.StreamSupport.stream;
 import static org.mapdb.Serializer.JAVA;
 
+/**
+ * An implementation of {@link DBContext} that relies on a {@link DB}.
+ *
+ * @author Abbas Abou Daya
+ * @see <a href="https://github.com/jankotek/mapdb">MapDB project</a>
+ */
 public class MapDBContext implements DBContext {
   private static final String TAG = DBContext.class.getSimpleName();
 
@@ -34,6 +40,12 @@ public class MapDBContext implements DBContext {
     objectMapper.enableDefaultTyping();
   }
 
+  /**
+   * This DB returned by this method does not trigger deletion on JVM shutdown.
+   *
+   * @param name name of the DB file
+   * @return an online instance of {@link MapDBContext}
+   */
   public static DBContext onlineInstance(String name) {
     DB db = DBMaker
         .fileDB(name)
@@ -45,6 +57,12 @@ public class MapDBContext implements DBContext {
     return new MapDBContext(db);
   }
 
+  /**
+   * This DB returned by this method gets deleted on JVM shutdown.
+   *
+   * @param name name of the DB file
+   * @return an offline instance of {@link MapDBContext}
+   */
   public static DBContext offlineInstance(String name) {
     DB db = DBMaker
         .fileDB(name)
@@ -87,20 +105,6 @@ public class MapDBContext implements DBContext {
     return writeAsString(collectedMap);
   }
 
-  private Map<String, Object> localCopy() {
-    return db.getAll().entrySet().stream().map(entry -> {
-      Object struct = entry.getValue();
-      if (struct instanceof Set)
-        return Pair.of(entry.getKey(), newHashSet((Set) struct));
-      else if (struct instanceof List)
-        return Pair.of(entry.getKey(), newArrayList((List) struct));
-      else if (struct instanceof Map)
-        return Pair.of(entry.getKey(), newHashMap((Map) struct));
-      else
-        return Pair.of(entry.getKey(), struct);
-    }).collect(toMap(pair -> (String) pair.a(), Pair::b));
-  }
-
   @Override
   public boolean recover(Object backup) {
     Map<String, Object> snapshot = localCopy();
@@ -115,26 +119,6 @@ public class MapDBContext implements DBContext {
       doRecover(snapshot);
       return false;
     }
-  }
-
-  private void doRecover(Map<String, Object> backupData) {
-    clear();
-    backupData.forEach((name, value) -> {
-
-      if (value instanceof Set) {
-        Set entrySet = (Set) value;
-        getSet(name).addAll(entrySet);
-      } else if (value instanceof Map) {
-        Map entryMap = (Map) value;
-        getMap(name).putAll(entryMap);
-      } else if (value instanceof List) {
-        List entryList = (List) value;
-        getList(name).addAll(entryList);
-      } else {
-        BotLogger.error(TAG, format("Unable to identify object type during DB recovery, entry name: %s", name));
-      }
-    });
-    commit();
   }
 
   @Override
@@ -178,6 +162,43 @@ public class MapDBContext implements DBContext {
   @Override
   public void close() throws IOException {
     db.close();
+  }
+
+  /**
+   * @return a local non-thread safe copy of the database
+   */
+  private Map<String, Object> localCopy() {
+    return db.getAll().entrySet().stream().map(entry -> {
+      Object struct = entry.getValue();
+      if (struct instanceof Set)
+        return Pair.of(entry.getKey(), newHashSet((Set) struct));
+      else if (struct instanceof List)
+        return Pair.of(entry.getKey(), newArrayList((List) struct));
+      else if (struct instanceof Map)
+        return Pair.of(entry.getKey(), newHashMap((Map) struct));
+      else
+        return Pair.of(entry.getKey(), struct);
+    }).collect(toMap(pair -> (String) pair.a(), Pair::b));
+  }
+
+  private void doRecover(Map<String, Object> backupData) {
+    clear();
+    backupData.forEach((name, value) -> {
+
+      if (value instanceof Set) {
+        Set entrySet = (Set) value;
+        getSet(name).addAll(entrySet);
+      } else if (value instanceof Map) {
+        Map entryMap = (Map) value;
+        getMap(name).putAll(entryMap);
+      } else if (value instanceof List) {
+        List entryList = (List) value;
+        getList(name).addAll(entryList);
+      } else {
+        BotLogger.error(TAG, format("Unable to identify object type during DB recovery, entry name: %s", name));
+      }
+    });
+    commit();
   }
 
   private String writeAsString(Object obj) {

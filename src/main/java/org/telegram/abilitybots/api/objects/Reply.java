@@ -10,7 +10,14 @@ import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
 
-public class Reply {
+/**
+ * A reply consists of update conditionals and an action to be applied on the update.
+ * <p>
+ * If an update satisfies the {@link Reply#conditions}set by the reply, then it's safe to {@link Reply#actOn(Update)}.
+ *
+ * @author Abbas Abou Daya
+ */
+public final class Reply {
   public final List<Predicate<Update>> conditions;
   public final Consumer<Update> action;
 
