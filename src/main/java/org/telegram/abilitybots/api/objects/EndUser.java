@@ -12,93 +12,97 @@ import java.util.StringJoiner;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class EndUser implements Serializable {
-    @JsonProperty("id")
-    private final Integer id;
-    @JsonProperty("firstName")
-    private final String firstName;
-    @JsonProperty("lastName")
-    private final String lastName;
-    @JsonProperty("username")
-    private final String username;
+  @JsonProperty("id")
+  private final Integer id;
+  @JsonProperty("firstName")
+  private final String firstName;
+  @JsonProperty("lastName")
+  private final String lastName;
+  @JsonProperty("username")
+  private final String username;
 
-    @JsonCreator
-    public EndUser(@JsonProperty("id") Integer id,
-                   @JsonProperty("firstName") String firstName,
-                   @JsonProperty("lastName") String lastName,
-                   @JsonProperty("username") String username) {
-        this.id = id;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.username = username;
-    }
+  private EndUser(Integer id, String firstName, String lastName, String username) {
+    this.id = id;
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.username = username;
+  }
 
-    public static EndUser fromUser(User user) {
-        return new EndUser(user.getId(), user.getFirstName(), user.getLastName(), user.getUserName());
-    }
+  @JsonCreator
+  public static EndUser endUser(@JsonProperty("id") Integer id,
+                                @JsonProperty("firstName") String firstName,
+                                @JsonProperty("lastName") String lastName,
+                                @JsonProperty("username") String username) {
+    return new EndUser(id, firstName, lastName, username);
+  }
 
-    public int id() {
-        return id;
-    }
+  public static EndUser fromUser(User user) {
+    return new EndUser(user.getId(), user.getFirstName(), user.getLastName(), user.getUserName());
+  }
 
-    public String firstName() {
-        return firstName;
-    }
+  public int id() {
+    return id;
+  }
 
-    public String lastName() {
-        return lastName;
-    }
+  public String firstName() {
+    return firstName;
+  }
 
-    public String username() {
-        return username;
-    }
+  public String lastName() {
+    return lastName;
+  }
 
-    public String fullName() {
-        StringJoiner name = new StringJoiner(" ");
+  public String username() {
+    return username;
+  }
 
-        if (!isEmpty(firstName))
-            name.add(firstName);
-        if (!isEmpty(lastName))
-            name.add(lastName);
+  public String fullName() {
+    StringJoiner name = new StringJoiner(" ");
 
-        return name.toString();
-    }
+    if (!isEmpty(firstName))
+      name.add(firstName);
+    if (!isEmpty(lastName))
+      name.add(lastName);
 
-    public String shortName() {
-        if (!isEmpty(firstName))
-            return firstName;
+    return name.toString();
+  }
 
-        if (!isEmpty(lastName))
-            return lastName;
+  public String shortName() {
+    if (!isEmpty(firstName))
+      return firstName;
 
-        return username;
-    }
+    if (!isEmpty(lastName))
+      return lastName;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
+    return username;
+  }
 
-        EndUser endUser = (EndUser) o;
-        return Objects.equals(id, endUser.id) &&
-                Objects.equals(firstName, endUser.firstName) &&
-                Objects.equals(lastName, endUser.lastName) &&
-                Objects.equals(username, endUser.username);
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, firstName, lastName, username);
-    }
+    EndUser endUser = (EndUser) o;
+    return Objects.equals(id, endUser.id) &&
+        Objects.equals(firstName, endUser.firstName) &&
+        Objects.equals(lastName, endUser.lastName) &&
+        Objects.equals(username, endUser.username);
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .add("firstName", firstName)
-                .add("lastName", lastName)
-                .add("username", username)
-                .toString();
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, firstName, lastName, username);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("id", id)
+        .add("firstName", firstName)
+        .add("lastName", lastName)
+        .add("username", username)
+        .toString();
+  }
 }

@@ -12,6 +12,7 @@ import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.*;
 import org.telegram.telegrambots.api.objects.games.GameHighScore;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
+import org.telegram.telegrambots.updateshandlers.DownloadFileCallback;
 import org.telegram.telegrambots.updateshandlers.SentCallback;
 
 import java.io.Serializable;
@@ -23,125 +24,133 @@ import java.util.Optional;
  * Created by Addo on 2/9/2017.
  */
 public interface MessageSender {
-    Optional<Message> send(String message, long id);
+  Optional<Message> send(String message, long id);
 
-    Optional<Message> sendFormatted(String message, long id);
+  Optional<Message> sendFormatted(String message, long id);
 
-    Optional<Message> sendMessage(SendMessage message);
+  Optional<Message> sendMessage(SendMessage message);
 
-    Boolean answerInlineQuery(AnswerInlineQuery answerInlineQuery) throws TelegramApiException;
+  Boolean answerInlineQuery(AnswerInlineQuery answerInlineQuery) throws TelegramApiException;
 
-    Boolean sendChatAction(SendChatAction sendChatAction) throws TelegramApiException;
+  Boolean sendChatAction(SendChatAction sendChatAction) throws TelegramApiException;
 
-    Message forwardMessage(ForwardMessage forwardMessage) throws TelegramApiException;
+  Message forwardMessage(ForwardMessage forwardMessage) throws TelegramApiException;
 
-    Message sendLocation(SendLocation sendLocation) throws TelegramApiException;
+  Message sendLocation(SendLocation sendLocation) throws TelegramApiException;
 
-    Message sendVenue(SendVenue sendVenue) throws TelegramApiException;
+  Message sendVenue(SendVenue sendVenue) throws TelegramApiException;
 
-    Message sendContact(SendContact sendContact) throws TelegramApiException;
+  Message sendContact(SendContact sendContact) throws TelegramApiException;
 
-    Boolean kickMember(KickChatMember kickChatMember) throws TelegramApiException;
+  Boolean kickMember(KickChatMember kickChatMember) throws TelegramApiException;
 
-    Boolean unbanMember(UnbanChatMember unbanChatMember) throws TelegramApiException;
+  Boolean unbanMember(UnbanChatMember unbanChatMember) throws TelegramApiException;
 
-    Boolean leaveChat(LeaveChat leaveChat) throws TelegramApiException;
+  Boolean leaveChat(LeaveChat leaveChat) throws TelegramApiException;
 
-    Chat getChat(GetChat getChat) throws TelegramApiException;
+  Chat getChat(GetChat getChat) throws TelegramApiException;
 
-    List<ChatMember> getChatAdministrators(GetChatAdministrators getChatAdministrators) throws TelegramApiException;
+  List<ChatMember> getChatAdministrators(GetChatAdministrators getChatAdministrators) throws TelegramApiException;
 
-    ChatMember getChatMember(GetChatMember getChatMember) throws TelegramApiException;
+  ChatMember getChatMember(GetChatMember getChatMember) throws TelegramApiException;
 
-    Integer getChatMemberCount(GetChatMemberCount getChatMemberCount) throws TelegramApiException;
+  Integer getChatMemberCount(GetChatMemberCount getChatMemberCount) throws TelegramApiException;
 
-    Serializable editMessageText(EditMessageText editMessageText) throws TelegramApiException;
+  Serializable editMessageText(EditMessageText editMessageText) throws TelegramApiException;
 
-    Serializable editMessageCaption(EditMessageCaption editMessageCaption) throws TelegramApiException;
+  Serializable editMessageCaption(EditMessageCaption editMessageCaption) throws TelegramApiException;
 
-    Serializable editMessageReplyMarkup(EditMessageReplyMarkup editMessageReplyMarkup) throws TelegramApiException;
+  Serializable editMessageReplyMarkup(EditMessageReplyMarkup editMessageReplyMarkup) throws TelegramApiException;
 
-    Boolean answerCallbackQuery(AnswerCallbackQuery answerCallbackQuery) throws TelegramApiException;
+  Boolean answerCallbackQuery(AnswerCallbackQuery answerCallbackQuery) throws TelegramApiException;
 
-    UserProfilePhotos getUserProfilePhotos(GetUserProfilePhotos getUserProfilePhotos) throws TelegramApiException;
+  UserProfilePhotos getUserProfilePhotos(GetUserProfilePhotos getUserProfilePhotos) throws TelegramApiException;
 
-    File getFile(GetFile getFile) throws TelegramApiException;
+  java.io.File downloadFile(String path) throws TelegramApiException;
 
-    User getMe() throws TelegramApiException;
+  void downloadFileAsync(String path, DownloadFileCallback<String> callback) throws TelegramApiException;
 
-    WebhookInfo getWebhookInfo() throws TelegramApiException;
+  java.io.File downloadFile(File file) throws TelegramApiException;
 
-    Serializable setGameScore(SetGameScore setGameScore) throws TelegramApiException;
+  void downloadFileAsync(File file, DownloadFileCallback<File> callback) throws TelegramApiException;
 
-    Serializable getGameHighScores(GetGameHighScores getGameHighScores) throws TelegramApiException;
+  File getFile(GetFile getFile) throws TelegramApiException;
 
-    Message sendGame(SendGame sendGame) throws TelegramApiException;
+  User getMe() throws TelegramApiException;
 
-    Boolean deleteWebhook(DeleteWebhook deleteWebhook) throws TelegramApiException;
+  WebhookInfo getWebhookInfo() throws TelegramApiException;
 
-    void sendMessageAsync(SendMessage sendMessage, SentCallback<Message> sentCallback) throws TelegramApiException;
+  Serializable setGameScore(SetGameScore setGameScore) throws TelegramApiException;
 
-    void answerInlineQueryAsync(AnswerInlineQuery answerInlineQuery, SentCallback<Boolean> sentCallback) throws TelegramApiException;
+  Serializable getGameHighScores(GetGameHighScores getGameHighScores) throws TelegramApiException;
 
-    void sendChatActionAsync(SendChatAction sendChatAction, SentCallback<Boolean> sentCallback) throws TelegramApiException;
+  Message sendGame(SendGame sendGame) throws TelegramApiException;
 
-    void forwardMessageAsync(ForwardMessage forwardMessage, SentCallback<Message> sentCallback) throws TelegramApiException;
+  Boolean deleteWebhook(DeleteWebhook deleteWebhook) throws TelegramApiException;
 
-    void sendLocationAsync(SendLocation sendLocation, SentCallback<Message> sentCallback) throws TelegramApiException;
+  void sendMessageAsync(SendMessage sendMessage, SentCallback<Message> sentCallback) throws TelegramApiException;
 
-    void sendVenueAsync(SendVenue sendVenue, SentCallback<Message> sentCallback) throws TelegramApiException;
+  void answerInlineQueryAsync(AnswerInlineQuery answerInlineQuery, SentCallback<Boolean> sentCallback) throws TelegramApiException;
 
-    void sendContactAsync(SendContact sendContact, SentCallback<Message> sentCallback) throws TelegramApiException;
+  void sendChatActionAsync(SendChatAction sendChatAction, SentCallback<Boolean> sentCallback) throws TelegramApiException;
 
-    void kickMemberAsync(KickChatMember kickChatMember, SentCallback<Boolean> sentCallback) throws TelegramApiException;
+  void forwardMessageAsync(ForwardMessage forwardMessage, SentCallback<Message> sentCallback) throws TelegramApiException;
 
-    void unbanMemberAsync(UnbanChatMember unbanChatMember, SentCallback<Boolean> sentCallback) throws TelegramApiException;
+  void sendLocationAsync(SendLocation sendLocation, SentCallback<Message> sentCallback) throws TelegramApiException;
 
-    void leaveChatAsync(LeaveChat leaveChat, SentCallback<Boolean> sentCallback) throws TelegramApiException;
+  void sendVenueAsync(SendVenue sendVenue, SentCallback<Message> sentCallback) throws TelegramApiException;
 
-    void getChatAsync(GetChat getChat, SentCallback<Chat> sentCallback) throws TelegramApiException;
+  void sendContactAsync(SendContact sendContact, SentCallback<Message> sentCallback) throws TelegramApiException;
 
-    void getChatAdministratorsAsync(GetChatAdministrators getChatAdministrators, SentCallback<ArrayList<ChatMember>> sentCallback) throws TelegramApiException;
+  void kickMemberAsync(KickChatMember kickChatMember, SentCallback<Boolean> sentCallback) throws TelegramApiException;
 
-    void getChatMemberAsync(GetChatMember getChatMember, SentCallback<ChatMember> sentCallback) throws TelegramApiException;
+  void unbanMemberAsync(UnbanChatMember unbanChatMember, SentCallback<Boolean> sentCallback) throws TelegramApiException;
 
-    void getChatMemberCountAsync(GetChatMemberCount getChatMemberCount, SentCallback<Integer> sentCallback) throws TelegramApiException;
+  void leaveChatAsync(LeaveChat leaveChat, SentCallback<Boolean> sentCallback) throws TelegramApiException;
 
-    void editMessageTextAsync(EditMessageText editMessageText, SentCallback<Serializable> sentCallback) throws TelegramApiException;
+  void getChatAsync(GetChat getChat, SentCallback<Chat> sentCallback) throws TelegramApiException;
 
-    void editMessageCaptionAsync(EditMessageCaption editMessageCaption, SentCallback<Serializable> sentCallback) throws TelegramApiException;
+  void getChatAdministratorsAsync(GetChatAdministrators getChatAdministrators, SentCallback<ArrayList<ChatMember>> sentCallback) throws TelegramApiException;
 
-    void editMessageReplyMarkup(EditMessageReplyMarkup editMessageReplyMarkup, SentCallback<Serializable> sentCallback) throws TelegramApiException;
+  void getChatMemberAsync(GetChatMember getChatMember, SentCallback<ChatMember> sentCallback) throws TelegramApiException;
 
-    void answerCallbackQueryAsync(AnswerCallbackQuery answerCallbackQuery, SentCallback<Boolean> sentCallback) throws TelegramApiException;
+  void getChatMemberCountAsync(GetChatMemberCount getChatMemberCount, SentCallback<Integer> sentCallback) throws TelegramApiException;
 
-    void getUserProfilePhotosAsync(GetUserProfilePhotos getUserProfilePhotos, SentCallback<UserProfilePhotos> sentCallback) throws TelegramApiException;
+  void editMessageTextAsync(EditMessageText editMessageText, SentCallback<Serializable> sentCallback) throws TelegramApiException;
 
-    void getFileAsync(GetFile getFile, SentCallback<File> sentCallback) throws TelegramApiException;
+  void editMessageCaptionAsync(EditMessageCaption editMessageCaption, SentCallback<Serializable> sentCallback) throws TelegramApiException;
 
-    void getMeAsync(SentCallback<User> sentCallback) throws TelegramApiException;
+  void editMessageReplyMarkup(EditMessageReplyMarkup editMessageReplyMarkup, SentCallback<Serializable> sentCallback) throws TelegramApiException;
 
-    void getWebhookInfoAsync(SentCallback<WebhookInfo> sentCallback) throws TelegramApiException;
+  void answerCallbackQueryAsync(AnswerCallbackQuery answerCallbackQuery, SentCallback<Boolean> sentCallback) throws TelegramApiException;
 
-    void setGameScoreAsync(SetGameScore setGameScore, SentCallback<Serializable> sentCallback) throws TelegramApiException;
+  void getUserProfilePhotosAsync(GetUserProfilePhotos getUserProfilePhotos, SentCallback<UserProfilePhotos> sentCallback) throws TelegramApiException;
 
-    void getGameHighScoresAsync(GetGameHighScores getGameHighScores, SentCallback<ArrayList<GameHighScore>> sentCallback) throws TelegramApiException;
+  void getFileAsync(GetFile getFile, SentCallback<File> sentCallback) throws TelegramApiException;
 
-    void sendGameAsync(SendGame sendGame, SentCallback<Message> sentCallback) throws TelegramApiException;
+  void getMeAsync(SentCallback<User> sentCallback) throws TelegramApiException;
 
-    void deleteWebhook(DeleteWebhook deleteWebhook, SentCallback<Boolean> sentCallback) throws TelegramApiException;
+  void getWebhookInfoAsync(SentCallback<WebhookInfo> sentCallback) throws TelegramApiException;
 
-    Message sendDocument(SendDocument sendDocument) throws TelegramApiException;
+  void setGameScoreAsync(SetGameScore setGameScore, SentCallback<Serializable> sentCallback) throws TelegramApiException;
 
-    Message sendPhoto(SendPhoto sendPhoto) throws TelegramApiException;
+  void getGameHighScoresAsync(GetGameHighScores getGameHighScores, SentCallback<ArrayList<GameHighScore>> sentCallback) throws TelegramApiException;
 
-    Message sendVideo(SendVideo sendVideo) throws TelegramApiException;
+  void sendGameAsync(SendGame sendGame, SentCallback<Message> sentCallback) throws TelegramApiException;
 
-    Message sendSticker(SendSticker sendSticker) throws TelegramApiException;
+  void deleteWebhook(DeleteWebhook deleteWebhook, SentCallback<Boolean> sentCallback) throws TelegramApiException;
 
-    Message sendAudio(SendAudio sendAudio) throws TelegramApiException;
+  Message sendDocument(SendDocument sendDocument) throws TelegramApiException;
 
-    Message sendVoice(SendVoice sendVoice) throws TelegramApiException;
+  Message sendPhoto(SendPhoto sendPhoto) throws TelegramApiException;
 
-    void edit(EditMessageText message);
+  Message sendVideo(SendVideo sendVideo) throws TelegramApiException;
+
+  Message sendSticker(SendSticker sendSticker) throws TelegramApiException;
+
+  Message sendAudio(SendAudio sendAudio) throws TelegramApiException;
+
+  Message sendVoice(SendVoice sendVoice) throws TelegramApiException;
+
+  void edit(EditMessageText message);
 }

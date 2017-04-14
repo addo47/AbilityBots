@@ -7,43 +7,47 @@ import org.telegram.abilitybots.api.objects.Ability.AbilityBuilder;
 import org.telegram.abilitybots.api.sender.MessageSender;
 
 import static org.telegram.abilitybots.api.objects.Ability.builder;
+import static org.telegram.abilitybots.api.objects.Flag.CALLBACK_QUERY;
+import static org.telegram.abilitybots.api.objects.Flag.MESSAGE;
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 
-/**
- * Created by Addo on 2/11/2017.
- */
 public class DefaultBot extends AbilityBot {
 
-    public DefaultBot(String token, String username, DBContext db) {
-        super(token, username, db);
-    }
+  public DefaultBot(String token, String username, DBContext db) {
+    super(token, username, db);
+  }
 
-    @Override
-    public int creatorId() {
-        return 1337;
-    }
+  public static AbilityBuilder getDefaultBuilder() {
+    return builder()
+        .name("test")
+        .privacy(PUBLIC)
+        .locality(ALL)
+        .input(1)
+        .action(ctx -> {
+        });
+  }
 
-    public Ability defaultAbility() {
-        return getDefaultBuilder().name(DEFAULT).info("dis iz default command").build();
-    }
+  @Override
+  public int creatorId() {
+    return 1337;
+  }
 
-    public Ability testAbility() {
-        return getDefaultBuilder().build();
-    }
+  public Ability defaultAbility() {
+    return getDefaultBuilder()
+        .name(DEFAULT)
+        .info("dis iz default command")
+        .reply(upd -> sender.send("reply", upd.getMessage().getChatId()), MESSAGE)
+        .reply(upd -> sender.send("reply", upd.getCallbackQuery().getMessage().getChatId()), CALLBACK_QUERY)
+        .build();
+  }
 
-    public static AbilityBuilder getDefaultBuilder() {
-        return builder()
-                .name("test")
-                .privacy(PUBLIC)
-                .locality(ALL)
-                .input(1)
-                .consumer(ctx -> {
-                });
-    }
+  public Ability testAbility() {
+    return getDefaultBuilder().build();
+  }
 
-    @VisibleForTesting
-    void setSender(MessageSender sender) {
-        this.sender = sender;
-    }
+  @VisibleForTesting
+  void setSender(MessageSender sender) {
+    this.sender = sender;
+  }
 }
