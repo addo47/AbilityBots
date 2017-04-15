@@ -34,6 +34,7 @@ import static org.telegram.abilitybots.api.objects.Flag.DOCUMENT;
 import static org.telegram.abilitybots.api.objects.Flag.MESSAGE;
 import static org.telegram.abilitybots.api.objects.Locality.ALL;
 import static org.telegram.abilitybots.api.objects.Locality.GROUP;
+import static org.telegram.abilitybots.api.objects.MessageContext.newContext;
 import static org.telegram.abilitybots.api.objects.Privacy.ADMIN;
 import static org.telegram.abilitybots.api.objects.Privacy.PUBLIC;
 
@@ -358,7 +359,7 @@ public class AbilityBotTest {
     mockUser(update, message, user);
 
     Pair<MessageContext, Ability> actualPair = defaultBot.getContext(trio);
-    Pair<MessageContext, Ability> expectedPair = Pair.of(new MessageContext(update, MUSER, GROUP_ID, TEXT), ability);
+    Pair<MessageContext, Ability> expectedPair = Pair.of(newContext(update, MUSER, GROUP_ID, TEXT), ability);
 
     assertEquals("Unexpected result when fetching for context", expectedPair, actualPair);
   }

@@ -19,11 +19,15 @@ public class MessageContext {
   private final String[] arguments;
   private final Update update;
 
-  public MessageContext(Update update, EndUser user, Long chatId, String... arguments) {
+  private MessageContext(Update update, EndUser user, Long chatId, String[] arguments) {
     this.user = user;
     this.chatId = chatId;
     this.update = update;
     this.arguments = arguments;
+  }
+
+  public static MessageContext newContext(Update update, EndUser user, Long chatId, String... arguments) {
+    return new MessageContext(update, user, chatId, arguments);
   }
 
   /**

@@ -46,6 +46,7 @@ import static org.telegram.abilitybots.api.objects.Ability.builder;
 import static org.telegram.abilitybots.api.objects.EndUser.fromUser;
 import static org.telegram.abilitybots.api.objects.Flag.*;
 import static org.telegram.abilitybots.api.objects.Locality.*;
+import static org.telegram.abilitybots.api.objects.MessageContext.newContext;
 import static org.telegram.abilitybots.api.objects.Privacy.*;
 import static org.telegram.abilitybots.api.util.AbilityUtils.commitTo;
 import static org.telegram.abilitybots.api.util.AbilityUtils.isUserMessage;
@@ -63,13 +64,13 @@ import static org.telegram.abilitybots.api.util.AbilityUtils.isUserMessage;
  * <li>Only the user with the ID returned by {@link AbilityBot#creatorId()} can genuinely claim the bot</li>
  * </ul>
  * <li>/commands - reports all user-defined commands (abilities)</li>
+ * <ul>
+ * <li>The same format acceptable by BotFather</li>
+ * </ul>
  * <li>/backup - returns a backup of the bot database</li>
  * <li>/recover - recovers the database</li>
  * <li>/promote <code>@username</code> - promotes user to bot admin</li>
  * <li>/demote <code>@username</code> - demotes bot admin to user</li>
- * <ul>
- * <li>The same format acceptable by BotFather</li>
- * </ul>
  * <li>/ban <code>@username</code> - bans the user from accessing your bot commands and features</li>
  * <li>/unban <code>@username</code> - lifts the ban from the user</li>
  * </ul>
@@ -485,7 +486,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
             }
           } else {
             // This is not a joke
-            abilities.get(BAN).consumer().accept(new MessageContext(ctx.update(), ctx.user(), ctx.chatId(), ctx.user().username()));
+            abilities.get(BAN).consumer().accept(newContext(ctx.update(), ctx.user(), ctx.chatId(), ctx.user().username()));
           }
         })
         .post(commitTo(db))
@@ -553,7 +554,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     Update update = trio.a();
     EndUser user = fromUser(AbilityUtils.getUser(update));
 
-    return Pair.of(new MessageContext(update, user, AbilityUtils.getChatId(update), trio.c()), trio.b());
+    return Pair.of(newContext(update, user, AbilityUtils.getChatId(update), trio.c()), trio.b());
   }
 
   boolean checkBlacklist(Update update) {
