@@ -11,6 +11,7 @@ import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageReplyMa
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.*;
 import org.telegram.telegrambots.api.objects.games.GameHighScore;
+import org.telegram.telegrambots.api.objects.replykeyboard.ForceReplyKeyboard;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import org.telegram.telegrambots.logging.BotLogger;
@@ -29,8 +30,8 @@ import static java.util.Optional.ofNullable;
  * The default implementation of the {@link MessageSender}. This serves as a proxy to the {@link DefaultAbsSender} methods.
  * <p>Most of the methods below will be directly calling the bot's similar functions. However, there are some methods introduced to ease sending messages such as:</p>
  * <ol>
- * <li>{@link DefaultMessageSender#sendFormatted(String, long)}</li>
- * <li>{@link DefaultMessageSender#send(String, long)}</li>
+ * <li>{@link DefaultMessageSender#sendMd(String, long)} - with markdown</li>
+ * <li>{@link DefaultMessageSender#send(String, long)} - without markdown</li>
  * </ol>
  *
  * @author Abbas Abou Daya
@@ -50,8 +51,18 @@ public class DefaultMessageSender implements MessageSender {
   }
 
   @Override
-  public Optional<Message> sendFormatted(String message, long id) {
+  public Optional<Message> sendMd(String message, long id) {
     return doSendMessage(message, id, true);
+  }
+
+  @Override
+  public Optional<Message> forceReply(String message, long id) {
+    SendMessage msg = new SendMessage();
+    msg.setText(message);
+    msg.setChatId(id);
+    msg.setReplyMarkup(new ForceReplyKeyboard());
+
+    return optionalSendMessage(msg);
   }
 
   @Override
@@ -374,8 +385,11 @@ public class DefaultMessageSender implements MessageSender {
     smsg.setChatId(groupId);
     smsg.setText(txt);
     smsg.enableMarkdown(format);
-    smsg.enableHtml(format);
 
+    return optionalSendMessage(smsg);
+  }
+
+  private Optional<Message> optionalSendMessage(SendMessage smsg) {
     try {
       return ofNullable(sendMessage(smsg));
     } catch (TelegramApiException e) {

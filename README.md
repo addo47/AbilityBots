@@ -1,7 +1,7 @@
 [![Telegram](http://trellobot.doomdns.org/telegrambadge.svg)](https://telegram.me/AbilityBots)
 [![Build Status](https://travis-ci.org/addo37/AbilityBots.svg?branch=master)](https://travis-ci.org/addo37/AbilityBots)
 [![Jitpack](https://jitpack.io/v/addo37/AbilityBots.svg)](https://jitpack.io/#addo37/AbilityBots)
-[![javadoc.io](https://javadocio-badges.herokuapp.com/net.moznion/mysql-diff/badge.svg)](https://addo37.github.io/AbilityBots/)
+[![JavaDoc](http://svgur.com/i/1Ex.svg)](https://addo37.github.io/AbilityBots/)
 
 Motivation
 ----------
@@ -58,7 +58,7 @@ Here's a breakdown of what has been written above:
     * *MessageContext* provides fast accessors for the **chatId**, **user** and the underlying **update**. It also conforms to the specifications of the basic API.
 * *.post()* - the logic executed **after** your main action finishes execution
 
-It would be a total nightmare to write something similar with the basic API, here's a snippet of how this would look like with the plain basic API.
+It would be quite verbose to write something similar with the basic API, here's a snippet of how this would look like with the plain basic API.
 
 ```java
    @Override

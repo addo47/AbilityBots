@@ -29,7 +29,9 @@ import java.util.Optional;
 public interface MessageSender {
   Optional<Message> send(String message, long id);
 
-  Optional<Message> sendFormatted(String message, long id);
+  Optional<Message> sendMd(String message, long id);
+
+  Optional<Message> forceReply(String message, long id);
 
   Boolean answerInlineQuery(AnswerInlineQuery answerInlineQuery) throws TelegramApiException;
 
