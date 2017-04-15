@@ -1,7 +1,12 @@
-[![Telegram](http://trellobot.doomdns.org/telegrambadge.svg)](https://telegram.me/AbilityBots)
+<p align="center">
+  <img src="https://github.com/addo37/AbilityBots/blob/gh-pages/images/API%20BOT-03.png?raw=true" alt="abilitybots" width="200" height="200"/>
+
 [![Build Status](https://travis-ci.org/addo37/AbilityBots.svg?branch=master)](https://travis-ci.org/addo37/AbilityBots)
 [![Jitpack](https://jitpack.io/v/addo37/AbilityBots.svg)](https://jitpack.io/#addo37/AbilityBots)
 [![JavaDoc](http://svgur.com/i/1Ex.svg)](https://addo37.github.io/AbilityBots/)
+[![Telegram](http://trellobot.doomdns.org/telegrambadge.svg)](https://telegram.me/AbilityBots)
+
+</p>
 
 Motivation
 ----------
