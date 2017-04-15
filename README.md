@@ -8,6 +8,11 @@
 
 </div>
 
+### Usage
+**Maven & Gradle** - [JitPack](https://jitpack.io/#addo37/AbilityBots/v1.0.0)
+
+**Plain imports** - Jar | fatJar
+
 Motivation
 ----------
 Ever since I've started programming bots for Telegram, I've been using the Telegram Bot Java API. It is a basic and nicely done API that is a 1-to-1 translation of the HTTP API exposed by Telegram.

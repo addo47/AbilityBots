@@ -25,6 +25,12 @@ task sourceJar(type: Jar) {
     from sourceSets.main.allJava
 }
 
+task fatJar(type: Jar) {
+    baseName = project.name + '-with-dependencies'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
