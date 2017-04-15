@@ -67,8 +67,7 @@ public class DefaultMessageSender implements MessageSender {
 
   @Override
   public Boolean answerInlineQuery(AnswerInlineQuery answerInlineQuery) throws TelegramApiException {
-      return bot.answerInlineQuery(answerInlineQuery);
-
+    return bot.answerInlineQuery(answerInlineQuery);
   }
 
   @Override

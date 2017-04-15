@@ -10,10 +10,8 @@ import org.telegram.abilitybots.api.util.Pair;
 import org.telegram.abilitybots.api.util.Trio;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
-import org.telegram.telegrambots.api.objects.replykeyboard.ForceReplyKeyboard;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
@@ -48,8 +46,7 @@ import static org.telegram.abilitybots.api.objects.Flag.*;
 import static org.telegram.abilitybots.api.objects.Locality.*;
 import static org.telegram.abilitybots.api.objects.MessageContext.newContext;
 import static org.telegram.abilitybots.api.objects.Privacy.*;
-import static org.telegram.abilitybots.api.util.AbilityUtils.commitTo;
-import static org.telegram.abilitybots.api.util.AbilityUtils.isUserMessage;
+import static org.telegram.abilitybots.api.util.AbilityUtils.*;
 
 /**
  * The <b>father</b> of all ability bots. Bots that need to utilize abilities need to extend this bot.
@@ -107,14 +104,15 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
   // DB and sender
   protected final DBContext db;
-  protected MessageSender sender;
 
+  protected MessageSender sender;
   // Bot token and username
   private final String botToken;
-  private final String botUsername;
 
+  private final String botUsername;
   // Ability registry
   private Map<String, Ability> abilities;
+
   // Reply registry
   private List<Reply> replies;
 
@@ -308,18 +306,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .locality(USER)
         .privacy(CREATOR)
         .input(0)
-        .action(ctx -> {
-          SendMessage message = new SendMessage();
-          message.setChatId(ctx.chatId());
-          message.setText(RECOVERY_MESSAGE);
-          message.setReplyMarkup(new ForceReplyKeyboard());
-
-          try {
-            sender.sendMessage(message);
-          } catch (TelegramApiException e) {
-            e.printStackTrace();
-          }
-        })
+        .action(ctx -> sender.forceReply(RECOVERY_MESSAGE, ctx.chatId()))
         .reply(update -> {
           Long chatId = update.getMessage().getChatId();
           String fileId = update.getMessage().getDocument().getFileId();
@@ -355,7 +342,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .privacy(ADMIN)
         .input(1)
         .action(ctx -> {
-          String username = AbilityUtils.stripTag(ctx.firstArg());
+          String username = stripTag(ctx.firstArg());
           Optional<Integer> endUser = getUser(username).map(EndUser::id);
 
           if (checkUser(endUser, ctx.chatId())) {
@@ -365,16 +352,17 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
             // Protection from abuse
             if (userId == creatorId()) {
               userId = ctx.user().id();
-              bannedUser = isNullOrEmpty(ctx.user().username()) ? AbilityUtils.addTag(ctx.user().username()) : ctx.user().shortName();
+              bannedUser = isNullOrEmpty(ctx.user().username()) ? addTag(ctx.user().username()) : ctx.user().shortName();
             } else {
-              bannedUser = AbilityUtils.addTag(username);
+              bannedUser = addTag(username);
             }
 
             Set<Integer> blacklist = db.getSet(BLACKLIST);
-            if (blacklist.add(userId))
-              sender.sendMd(format("%s is now *banned*.", bannedUser), ctx.chatId());
-            else {
+            if (blacklist.contains(userId))
               sender.sendMd(format("%s is already *banned*.", bannedUser), ctx.chatId());
+            else {
+              blacklist.add(userId);
+              sender.sendMd(format("%s is now *banned*.", bannedUser), ctx.chatId());
             }
           }
         })
@@ -394,7 +382,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .privacy(ADMIN)
         .input(1)
         .action(ctx -> {
-          String username = AbilityUtils.stripTag(ctx.firstArg());
+          String username = stripTag(ctx.firstArg());
           Optional<Integer> endUser = getUser(username).map(EndUser::id);
 
           if (checkUser(endUser, ctx.chatId())) {
@@ -421,15 +409,17 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .privacy(ADMIN)
         .input(1)
         .action(ctx -> {
-          String username = AbilityUtils.stripTag(ctx.firstArg());
+          String username = stripTag(ctx.firstArg());
           Optional<Integer> endUserId = getUser(username).map(EndUser::id);
 
           if (checkUser(endUserId, ctx.chatId())) {
             Set<Integer> admins = db.getSet(ADMINS);
-            if (admins.add(endUserId.get()))
-              sender.sendMd(format("@%s has been *promoted*.", username), ctx.chatId());
-            else {
+            Integer userId = endUserId.get();
+            if (admins.contains(userId))
               sender.sendMd(format("@%s is already an *admin*.", username), ctx.chatId());
+            else {
+              admins.add(userId);
+              sender.sendMd(format("@%s has been *promoted*.", username), ctx.chatId());
             }
           }
         }).post(commitTo(db))
@@ -446,7 +436,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .privacy(ADMIN)
         .input(1)
         .action(ctx -> {
-          String username = AbilityUtils.stripTag(ctx.firstArg());
+          String username = stripTag(ctx.firstArg());
           Optional<Integer> endUserId = getUser(username).map(EndUser::id);
 
           if (checkUser(endUserId, ctx.chatId())) {
@@ -479,14 +469,15 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
             int id = creatorId();
             long chatId = ctx.chatId();
 
-            if (admins.add(id))
-              sender.send("You're now my master.", chatId);
-            else {
+            if (admins.contains(id))
               sender.send("You're already my master.", chatId);
+            else {
+              admins.add(id);
+              sender.send("You're now my master.", chatId);
             }
           } else {
             // This is not a joke
-            abilities.get(BAN).consumer().accept(newContext(ctx.update(), ctx.user(), ctx.chatId(), ctx.user().username()));
+            abilities.get(BAN).action().accept(newContext(ctx.update(), ctx.user(), ctx.chatId(), ctx.user().username()));
           }
         })
         .post(commitTo(db))
@@ -541,12 +532,12 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   }
 
   private void postConsumption(Pair<MessageContext, Ability> pair) {
-    ofNullable(pair.b().postConsumer())
+    ofNullable(pair.b().postAction())
         .ifPresent(consumer -> consumer.accept(pair.a()));
   }
 
   Pair<MessageContext, Ability> consumeUpdate(Pair<MessageContext, Ability> pair) {
-    pair.b().consumer().accept(pair.a());
+    pair.b().action().accept(pair.a());
     return pair;
   }
 
@@ -554,7 +545,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     Update update = trio.a();
     EndUser user = fromUser(AbilityUtils.getUser(update));
 
-    return Pair.of(newContext(update, user, AbilityUtils.getChatId(update), trio.c()), trio.b());
+    return Pair.of(newContext(update, user, getChatId(update), trio.c()), trio.b());
   }
 
   boolean checkBlacklist(Update update) {

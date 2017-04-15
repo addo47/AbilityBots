@@ -75,7 +75,7 @@ public class AbilityBotTest {
   public void canBackupDB() throws TelegramApiException {
     MessageContext context = defaultContext();
 
-    defaultBot.backupDB().consumer().accept(context);
+    defaultBot.backupDB().action().accept(context);
 
     verify(sender, times(1)).sendDocument(any());
   }
@@ -109,7 +109,7 @@ public class AbilityBotTest {
 
     MessageContext context = defaultContext();
 
-    defaultBot.demoteAdmin().consumer().accept(context);
+    defaultBot.demoteAdmin().action().accept(context);
 
     Set<Integer> actual = db.getSet(ADMINS);
     Set<Integer> expected = emptySet();
@@ -122,7 +122,7 @@ public class AbilityBotTest {
 
     MessageContext context = defaultContext();
 
-    defaultBot.promoteAdmin().consumer().accept(context);
+    defaultBot.promoteAdmin().action().accept(context);
 
     Set<Integer> actual = db.getSet(ADMINS);
     Set<Integer> expected = newHashSet(MUSER.id());
@@ -134,7 +134,7 @@ public class AbilityBotTest {
     db.<EndUser>getSet(USERS).add(MUSER);
     MessageContext context = defaultContext();
 
-    defaultBot.banUser().consumer().accept(context);
+    defaultBot.banUser().action().accept(context);
 
     Set<Integer> actual = db.getSet(BLACKLIST);
     Set<Integer> expected = newHashSet(MUSER.id());
@@ -148,7 +148,7 @@ public class AbilityBotTest {
 
     MessageContext context = defaultContext();
 
-    defaultBot.unbanUser().consumer().accept(context);
+    defaultBot.unbanUser().action().accept(context);
 
     Set<Integer> actual = db.getSet(BLACKLIST);
     Set<Integer> expected = newHashSet();
@@ -171,7 +171,7 @@ public class AbilityBotTest {
     when(context.user()).thenReturn(MUSER);
     when(context.firstArg()).thenReturn(CREATOR.username());
 
-    defaultBot.banUser().consumer().accept(context);
+    defaultBot.banUser().action().accept(context);
 
     Set<Integer> actual = db.getSet(BLACKLIST);
     Set<Integer> expected = newHashSet(MUSER.id());
@@ -183,7 +183,7 @@ public class AbilityBotTest {
     MessageContext context = mock(MessageContext.class);
     when(context.user()).thenReturn(CREATOR);
 
-    defaultBot.claimCreator().consumer().accept(context);
+    defaultBot.claimCreator().action().accept(context);
 
     Set<Integer> actual = db.getSet(ADMINS);
     Set<Integer> expected = newHashSet(CREATOR.id());
@@ -196,7 +196,7 @@ public class AbilityBotTest {
     MessageContext context = mock(MessageContext.class);
     when(context.user()).thenReturn(MUSER);
 
-    defaultBot.claimCreator().consumer().accept(context);
+    defaultBot.claimCreator().action().accept(context);
 
     Set<Integer> actual = db.getSet(BLACKLIST);
     Set<Integer> expected = newHashSet(MUSER.id());
@@ -454,7 +454,7 @@ public class AbilityBotTest {
     MessageContext context = mock(MessageContext.class);
     when(context.chatId()).thenReturn(GROUP_ID);
 
-    defaultBot.reportCommands().consumer().accept(context);
+    defaultBot.reportCommands().action().accept(context);
 
     verify(sender, times(1)).send("default - dis iz default command", GROUP_ID);
   }

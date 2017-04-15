@@ -29,7 +29,7 @@ import static org.apache.commons.lang3.StringUtils.*;
  * In-order to instantiate an ability, you can call {@link Ability#builder()} to get the {@link AbilityBuilder}.
  * Once you're done setting your ability, you'll call {@link AbilityBuilder#build()} to get your constructed ability.
  * <p>
- * The only optional fields in an ability are {@link Ability#info}, {@link Ability#postConsumer}, {@link Ability#flags} and {@link Ability#replies}.
+ * The only optional fields in an ability are {@link Ability#info}, {@link Ability#postAction}, {@link Ability#flags} and {@link Ability#replies}.
  *
  * @author Abbas Abou Daya
  */
@@ -41,12 +41,12 @@ public final class Ability {
   private final Locality locality;
   private final Privacy privacy;
   private final int argNum;
-  private final Consumer<MessageContext> consumer;
-  private final Consumer<MessageContext> postConsumer;
+  private final Consumer<MessageContext> action;
+  private final Consumer<MessageContext> postAction;
   private final List<Reply> replies;
-  private final List<Flag> flags;
+  private final List<Predicate<Update>> flags;
 
-  private Ability(String name, String info, Locality locality, Privacy privacy, int argNum, Consumer<MessageContext> consumer, Consumer<MessageContext> postConsumer, List<Reply> replies, Flag... flags) {
+  private Ability(String name, String info, Locality locality, Privacy privacy, int argNum, Consumer<MessageContext> action, Consumer<MessageContext> postAction, List<Reply> replies, Predicate<Update>... flags) {
     checkArgument(!isEmpty(name), "Method name cannot be empty");
     checkArgument(!containsWhitespace(name), "Method name cannot contain spaces");
     checkArgument(isAlphanumeric(name), "Method name can only be alpha-numeric", name);
@@ -60,13 +60,13 @@ public final class Ability {
         "Use the number 0 if the method ignores the arguments OR uses as many as appended");
     this.argNum = argNum;
 
-    this.consumer = checkNotNull(consumer, "Method action can't be empty. Please assign a function by using .action() method");
-    if (postConsumer == null)
+    this.action = checkNotNull(action, "Method action can't be empty. Please assign a function by using .action() method");
+    if (postAction == null)
       BotLogger.info(TAG, format("No post action was detected for method with name [%s]", name));
 
     this.flags = ofNullable(flags).map(Arrays::asList).orElse(newArrayList());
 
-    this.postConsumer = postConsumer;
+    this.postAction = postAction;
     this.replies = replies;
   }
 
@@ -94,19 +94,19 @@ public final class Ability {
     return argNum;
   }
 
-  public Consumer<MessageContext> consumer() {
-    return consumer;
+  public Consumer<MessageContext> action() {
+    return action;
   }
 
-  public Consumer<MessageContext> postConsumer() {
-    return postConsumer;
+  public Consumer<MessageContext> postAction() {
+    return postAction;
   }
 
   public List<Reply> replies() {
     return replies;
   }
 
-  public List<Flag> flags() {
+  public List<Predicate<Update>> flags() {
     return flags;
   }
 
@@ -136,7 +136,7 @@ public final class Ability {
 
   @Override
   public int hashCode() {
-    return hash(name, info, locality, privacy, argNum, consumer, postConsumer, replies, flags);
+    return hash(name, info, locality, privacy, argNum, action, postAction, replies, flags);
   }
 
   public static class AbilityBuilder {
