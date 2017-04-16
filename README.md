@@ -5,6 +5,7 @@
 [![Jitpack](https://jitpack.io/v/addo37/AbilityBots.svg)](https://jitpack.io/#addo37/AbilityBots)
 [![JavaDoc](http://svgur.com/i/1Ex.svg)](https://addo37.github.io/AbilityBots/)
 [![Telegram](http://trellobot.doomdns.org/telegrambadge.svg)](https://telegram.me/AbilityBots)
+[![ghit.me](https://ghit.me/badge.svg?repo=addo37/AbilityBots)](https://ghit.me/repo/addo37/AbilityBots)
 
 </div>
 

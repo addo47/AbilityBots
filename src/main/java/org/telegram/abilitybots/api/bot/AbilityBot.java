@@ -154,7 +154,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
    */
   @Override
   public void onUpdateReceived(Update update) {
-    BotLogger.info(format("New update [%s] received at %s", update.getUpdateId(), now()), TAG);
+    BotLogger.info(format("New update [%s] received at %s", update.getUpdateId(), now()), format("%s - %s", TAG, botUsername));
     BotLogger.info(update.toString(), TAG);
     long millisStarted = System.currentTimeMillis();
 
@@ -174,7 +174,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .forEach(this::postConsumption);
 
     long processingTime = System.currentTimeMillis() - millisStarted;
-    BotLogger.info(format("Processing of update [%s] ended at %s%n---> Processing time: [%d ms] <---%n", update.getUpdateId(), now(), processingTime), TAG);
+    BotLogger.info(format("Processing of update [%s] ended at %s%n---> Processing time: [%d ms] <---%n", update.getUpdateId(), now(), processingTime), format("%s - %s", TAG, botUsername));
   }
 
   @Override

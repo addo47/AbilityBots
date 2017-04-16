@@ -43,7 +43,7 @@ public class AbilityBotTest {
   public static final long GROUP_ID = 10L;
   public static final String TEST = "test";
   public static final String[] TEXT = {TEST};
-  public static final EndUser MUSER = endUser(1, "first", "first", "last");
+  public static final EndUser MUSER = endUser(1, "first", "last", "username");
   public static final EndUser CREATOR = endUser(1337, "creatorFirst", "creatorLast", "creatorUsername");
 
   private DefaultBot defaultBot;
