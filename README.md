@@ -17,9 +17,9 @@ Usage
 
 Motivation
 ----------
-Ever since I've started programming bots for Telegram, I've been using the Telegram Bot Java API. It is a basic and nicely done API that is a 1-to-1 translation of the HTTP API exposed by Telegram.
+Ever since I've started programming bots for Telegram, I've been using the Telegram Bot Java API. It's a basic and nicely done API that is a 1-to-1 translation of the HTTP API exposed by Telegram.
 
-Dealing with a basic API has its advantages and disadvantages. Obviously, there's nothing hidden. If it is there on Telegram, it is here in the Java API.
+Dealing with a basic API has its advantages and disadvantages. Obviously, there's nothing hidden. If it's there on Telegram, it's here in the Java API.
 When you want to implement a feature in your bot, you start asking these questions:
 
 * The **WHO**?
@@ -107,13 +107,13 @@ I will leave you the choice to decide between the two snippets as to which is mo
 Objective
 ---------
 The AbilityBot abstraction intends to provide the following:
-* New feature is a new "Ability", a new method; no fuss, zero overhead, no cross-code with other features
+* New feature is a new **Ability**, a new method - no fuss, zero overhead, no cross-code with other features
 * Argument length on a command is as easy as changing a single integer
-* Privacy settings per ability - access levels to abilities! User | Admin | Creator
-* Embedded database - available in every declared ability
+* Privacy settings per Ability - access levels to Abilities! User | Admin | Creator
+* Embedded database - available for every declared ability
 * Proxy sender interface - enhances testability; accurate results pre-release
 
-Alongside these exciting core features of the AbilityBot, the following has been introduced:
+Alongside these exciting core features of the AbilityBot, the following have been introduced:
 * The bot automatically maintains an up-to-date set of all the users who have contacted the bot
     * up-to-date: if a user changes their Username, First Name or Last Name, the bot updates the respective field in the embedded-DB
 * Backup and recovery for the DB
@@ -148,8 +148,8 @@ For quick feedback, chatting or just having fun, please come and join us in our 
 Credits
 -------
 This project would not have been made possible had it not been for [Ruben](https://github.com/rubenlagus)'s work with the [Telegram Bot Java API](https://github.com/rubenlagus/TelegramBots).
-I strongly urge you to checkout that project and implement a bot to have a sense of how the basic API feels like.
-Ruben has made a great job in supplying a clear and straight-forward API that conforms to Telegram's HTTP API.
+I strongly urge you to check out that project and implement a bot to have a sense of how the basic API feels like.
+Ruben has done a great job in supplying a clear and straightforward API that conforms to Telegram's HTTP API.
 There is also a chat for that API.
 
 [![Telegram](http://trellobot.doomdns.org/telegrambadge.svg)](https://telegram.me/JavaBotsApi)
