@@ -31,17 +31,17 @@ When you want to implement a feature in your bot, you start asking these questio
     * If my bot crashes, how can I resume my operation?
     * Should I utilize a DB?
     * How can I separate logic execution of different features?
-    * How can I unit-test my feature outside Telegram?
+    * How can I unit-test my feature outside of Telegram?
 
-Every time you write a command or a feature, you will need to answer these questions and insure that your feature logic works.
+Every time you write a command or a feature, you will need to answer these questions and ensure that your feature logic works.
 
 Ability Bot Abstraction
 -----------------------
-After implementing my fifth bot using that API, I had it with the amount of **overhead** that was needed for every added feature. Methods were getting overly-complex and readability became sub-par.
-That is where the notion of an another layer of abstraction (AbilityBot) started to take shape.
+After implementing my fifth bot using that API, I had had it with the amount of **boilerplate code** that was needed for every added feature. Methods were getting overly-complex and readability became subpar.
+That is where the notion of another layer of abstraction (AbilityBot) began taking shape.
 
-The AbilityBot abstraction defines a new object, named **Ability**. An ability, is conditions, flags, action, post-action, replies all combined.
-As an example, here's a code-snippet of an ability that create a ***/hello*** command:
+The AbilityBot abstraction defines a new object, named **Ability**. An ability combines conditions, flags, action, post-action and replies.
+As an example, here is a code-snippet of an ability that creates a ***/hello*** command:
 
 ```java
 public Ability sayHelloWorld() {
@@ -57,11 +57,11 @@ public Ability sayHelloWorld() {
               .build();
 }
 ```
-Here's a breakdown of what has been written above:
+Here is a breakdown of the above code snippet:
 * *.name()* - the name of the ability (essentially, this is the command)
 * *.info()* - provides information for the command
     * More on this later, but it basically centralizes command information in-code.
-* *.input()* - the number of input arguments needed, 0 is for don't-care
+* *.input()* - the number of input arguments needed, 0 is for do-not-care
 * *.locality()* - this answers where you want the ability to be available
     * In GROUP, USER private chats or ALL (both)
 * *.privacy()* - this answers who you want to access your ability
@@ -70,7 +70,7 @@ Here's a breakdown of what has been written above:
     * *MessageContext* provides fast accessors for the **chatId**, **user** and the underlying **update**. It also conforms to the specifications of the basic API.
 * *.post()* - the logic executed **after** your main action finishes execution
 
-It would be quite verbose to write something similar with the basic API, here's a snippet of how this would look like with the plain basic API.
+The following is a snippet of how this would look like with the plain basic API.
 
 ```java
    @Override
@@ -100,7 +100,7 @@ It would be quite verbose to write something similar with the basic API, here's 
    }
 ```
 
-I will leave the choice to you to decide between the more **readable**, **writable** and **testable** snippet.
+I will leave you the choice to decide between the two snippets as to which is more **readable**, **writable** and **testable**.
 
 ***You can do so much more with abilities, besides plain commands. Head over to our [examples](#examples) to check out all of its features!***
 
@@ -108,27 +108,26 @@ Objective
 ---------
 The AbilityBot abstraction intends to provide the following:
 * New feature is a new "Ability", a new method; no fuss, zero overhead, no cross-code with other features
-* Forcing an argument length on a command is as easy as changing a single integer
-* Privacy of an ability - providing access levels to abilities! User | Admin | Creator
-* An embedded database provided on-the-spot in every declared Ability
-* Proxy sender interface to enhance testability; accurate results pre-release
+* Argument length on a command is as easy as changing a single integer
+* Privacy settings per ability - access levels to abilities! User | Admin | Creator
+* Embedded database - available in every declared ability
+* Proxy sender interface - enhances testability; accurate results pre-release
 
-Alongside these exciting core features of the AbilityBot, the following were introduced:
-* The bot automatically maintains an up-to-date set of all the users who contacted the bot
-    * up-to-date: if a user changes his or her username/first-name/last-name, the bot updates it in the embedded-DB
-* Backup and recover the DB
+Alongside these exciting core features of the AbilityBot, the following has been introduced:
+* The bot automatically maintains an up-to-date set of all the users who have contacted the bot
+    * up-to-date: if a user changes their Username, First Name or Last Name, the bot updates the respective field in the embedded-DB
+* Backup and recovery for the DB
     * Default implementation relies on JSON/Jackson
 * Ban and unban users from accessing your bots
-    * If someone is spamming your bot, you are able to ban them
-    * It will execute the shortest path to discard the update the next time they try to spam
-* Promote and demote users as bot admins
-    * That would allow admins to execute admin abilities
+    * The bot will execute the shortest path to discard the update the next time they try to spam
+* Promote and demote users as bot administrators
+    * Allows admins to execute admin abilities
 
 What's next?
 ------------
-This readme was associated with the initial 1.0 release of the AbilityBot abstraction. I'm looking forward to:
+This ReadMe is associated with the v1.0 release of the AbilityBot abstraction. I am looking forward to:
 * Provide a trigger to record metrics per ability
-* Implement AsyncAbilities
+* Implement AsyncAbility
 * Maintain integration with the latest updates on the basic API
 * Enrich the bot with features requested by the community
 
@@ -142,13 +141,13 @@ Support
 -------
 For issues and features, please use GitHub's [issues](https://github.com/addo37/AbilityBots/issues) tab.
 
-For quick feedback, chatting or just having fun, please come and join us in our Telegram super-group.
+For quick feedback, chatting or just having fun, please come and join us in our Telegram Supergroup.
 
 [![Telegram](http://trellobot.doomdns.org/telegrambadge.svg)](https://telegram.me/AbilityBots)
 
 Credits
 -------
-This project would not have been made possible if it weren't for the [Telegram Bot Java API](https://github.com/rubenlagus/TelegramBots) made by [Ruben](https://github.com/rubenlagus).
+This project would not have been made possible had it not been for [Ruben](https://github.com/rubenlagus)'s work with the [Telegram Bot Java API](https://github.com/rubenlagus/TelegramBots).
 I strongly urge you to checkout that project and implement a bot to have a sense of how the basic API feels like.
 Ruben has made a great job in supplying a clear and straight-forward API that conforms to Telegram's HTTP API.
 There is also a chat for that API.
