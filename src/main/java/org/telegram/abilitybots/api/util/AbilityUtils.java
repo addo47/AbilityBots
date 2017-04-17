@@ -6,6 +6,7 @@ import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.User;
 
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static org.telegram.abilitybots.api.objects.Flag.*;
 
@@ -118,5 +119,13 @@ public final class AbilityUtils {
    */
   public static String addTag(String username) {
     return "@" + username;
+  }
+
+  /**
+   * @param msg the message to be replied to
+   * @return a predicate that asserts that the update is a reply to the specified message.
+   */
+  public static Predicate<Update> isReplyTo(String msg) {
+    return update -> update.getMessage().getReplyToMessage().getText().equals(msg);
   }
 }

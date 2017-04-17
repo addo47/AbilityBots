@@ -24,7 +24,8 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.function.Predicate;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -36,8 +37,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.*;
 import static jersey.repackaged.com.google.common.base.Throwables.propagate;
 import static org.telegram.abilitybots.api.db.MapDBContext.onlineInstance;
 import static org.telegram.abilitybots.api.objects.Ability.builder;
@@ -83,24 +83,24 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   private static final String TAG = AbilityBot.class.getSimpleName();
 
   // DB objects
-  public static final String ADMINS = "ADMINS";
-  public static final String USERS = "USERS";
-  public static final String BLACKLIST = "BLACKLIST";
+  static final String ADMINS = "ADMINS";
+  static final String USERS = "USERS";
+  static final String BLACKLIST = "BLACKLIST";
 
   // Factory commands
-  public static final String DEFAULT = "default";
-  public static final String CLAIM = "claim";
-  public static final String BAN = "ban";
-  public static final String PROMOTE = "promote";
-  public static final String DEMOTE = "demote";
-  public static final String UNBAN = "unban";
-  public static final String BACKUP = "backup";
-  public static final String RECOVER = "recover";
-  public static final String COMMANDS = "commands";
+  protected static final String DEFAULT = "default";
+  protected static final String CLAIM = "claim";
+  protected static final String BAN = "ban";
+  protected static final String PROMOTE = "promote";
+  protected static final String DEMOTE = "demote";
+  protected static final String UNBAN = "unban";
+  protected static final String BACKUP = "backup";
+  protected static final String RECOVER = "recover";
+  protected static final String COMMANDS = "commands";
 
   // Messages
-  public static final String RECOVERY_MESSAGE = "I am ready to receive the backup file. Please reply to this message with the backup file attached.";
-  public static final String RECOVER_SUCCESS = "I have successfully recovered.";
+  protected static final String RECOVERY_MESSAGE = "I am ready to receive the backup file. Please reply to this message with the backup file attached.";
+  protected static final String RECOVER_SUCCESS = "I have successfully recovered.";
 
   // DB and sender
   protected final DBContext db;
@@ -124,6 +124,12 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     this.db = db;
     this.sender = new DefaultMessageSender(this);
 
+    Calendar calendar = Calendar.getInstance();
+    calendar.set(2017, Calendar.APRIL, 17, 6, 27, 0);
+    long desiredDelay = calendar.toInstant().getEpochSecond() - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+    Executors.newSingleThreadScheduledExecutor()
+        .schedule(() -> {/* your logic here */}, desiredDelay, TimeUnit.SECONDS);
+
     registerAbilities();
   }
 
@@ -139,11 +145,28 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     this(botToken, botUsername, onlineInstance(botUsername));
   }
 
-  public static Predicate<Update> isReplyTo(String msg) {
-    return update -> update.getMessage().getReplyToMessage().getText().equals(msg);
+  public abstract int creatorId();
+
+  /**
+   * @return the set of all users who have contacted the bot
+   */
+  protected Set<EndUser> users() {
+    return db.getSet(USERS);
   }
 
-  public abstract int creatorId();
+  /**
+   * @return a blacklist containing all the IDs of the banned users
+   */
+  protected Set<Integer> blacklist() {
+    return db.getSet(BLACKLIST);
+  }
+
+  /**
+   * @return an admin set of all the IDs of bot administrators
+   */
+  protected Set<Integer> admins() {
+    return db.getSet(ADMINS);
+  }
 
   /**
    * This method contains the stream of actions that are applied on any update.
@@ -165,10 +188,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .filter(this::filterReply)
         .map(this::getAbility)
         .filter(this::validateAbility)
-        .filter(this::checkMessageFlags)
         .filter(this::checkPrivacy)
         .filter(this::checkLocality)
         .filter(this::checkInput)
+        .filter(this::checkMessageFlags)
         .map(this::getContext)
         .map(this::consumeUpdate)
         .forEach(this::postConsumption);
@@ -206,7 +229,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
    * @return an optional describing the user
    */
   protected Optional<EndUser> getUser(String username) {
-    return db.<EndUser>getSet(USERS).stream().filter(user -> user.username().equalsIgnoreCase(username)).findFirst();
+    return users().stream().filter(user -> user.username().equalsIgnoreCase(username)).findFirst();
   }
 
   /**
@@ -216,7 +239,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
    * @return an optional describing the user
    */
   protected Optional<EndUser> getUser(int id) {
-    return db.<EndUser>getSet(USERS).stream().filter(user -> user.id() == id).findFirst();
+    return users().stream().filter(user -> user.id() == id).findFirst();
   }
 
   /**
@@ -357,7 +380,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
               bannedUser = addTag(username);
             }
 
-            Set<Integer> blacklist = db.getSet(BLACKLIST);
+            Set<Integer> blacklist = blacklist();
             if (blacklist.contains(userId))
               sender.sendMd(format("%s is already *banned*.", bannedUser), ctx.chatId());
             else {
@@ -386,7 +409,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
           Optional<Integer> endUser = getUser(username).map(EndUser::id);
 
           if (checkUser(endUser, ctx.chatId())) {
-            Set<Integer> blacklist = db.getSet(BLACKLIST);
+            Set<Integer> blacklist = blacklist();
 
             if (!blacklist.remove(endUser.get()))
               sender.sendMd(format("@%s is *not* on the *blacklist*.", username), ctx.chatId());
@@ -413,7 +436,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
           Optional<Integer> endUserId = getUser(username).map(EndUser::id);
 
           if (checkUser(endUserId, ctx.chatId())) {
-            Set<Integer> admins = db.getSet(ADMINS);
+            Set<Integer> admins = admins();
             Integer userId = endUserId.get();
             if (admins.contains(userId))
               sender.sendMd(format("@%s is already an *admin*.", username), ctx.chatId());
@@ -440,7 +463,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
           Optional<Integer> endUserId = getUser(username).map(EndUser::id);
 
           if (checkUser(endUserId, ctx.chatId())) {
-            Set<Integer> admins = db.getSet(ADMINS);
+            Set<Integer> admins = admins();
             if (admins.remove(endUserId.get())) {
               sender.sendMd(format("@%s has been *demoted*.", username), ctx.chatId());
             } else {
@@ -465,7 +488,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .input(0)
         .action(ctx -> {
           if (ctx.user().id() == creatorId()) {
-            Set<Integer> admins = db.getSet(ADMINS);
+            Set<Integer> admins = admins();
             int id = creatorId();
             long chatId = ctx.chatId();
 
@@ -551,7 +574,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   boolean checkBlacklist(Update update) {
     Integer id = AbilityUtils.getUser(update).getId();
 
-    return id == creatorId() || !db.<Integer>getSet(BLACKLIST).contains(id);
+    return id == creatorId() || !blacklist().contains(id);
   }
 
   boolean checkInput(Trio<Update, Ability, String[]> trio) {
@@ -584,7 +607,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   }
 
   private boolean isAdmin(Integer id) {
-    return db.<Integer>getSet(ADMINS).contains(id);
+    return admins().contains(id);
   }
 
   boolean validateAbility(Trio<Update, Ability, String[]> trio) {
@@ -620,7 +643,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
   Update addUser(Update update) {
     EndUser endUser = fromUser(AbilityUtils.getUser(update));
-    Set<EndUser> set = db.getSet(USERS);
+    Set<EndUser> set = users();
 
     Optional<EndUser> optUser = set.stream().filter(user -> user.id() == endUser.id()).findAny();
     if (!optUser.isPresent()) {

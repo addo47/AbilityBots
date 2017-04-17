@@ -11,13 +11,13 @@ import java.util.Set;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
-import static org.telegram.abilitybots.api.bot.AbilityBot.USERS;
 import static org.telegram.abilitybots.api.bot.AbilityBotTest.CREATOR;
 import static org.telegram.abilitybots.api.bot.AbilityBotTest.MUSER;
 import static org.telegram.abilitybots.api.db.MapDBContext.offlineInstance;
 
 public class MapDBContextTest {
 
+  private static final String USERS = "users";
   private static final String TEST = "TEST";
   private DBContext db;
 
