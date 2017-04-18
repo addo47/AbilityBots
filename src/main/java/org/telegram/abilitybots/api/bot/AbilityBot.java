@@ -262,6 +262,21 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   }
 
   /**
+   * Gets the user with the specified username. If user was not found, the bot will send a message on Telegram.
+   *
+   * @param username the username of the required user
+   * @return the id of the user
+   */
+  protected int getUserIdSendError(String username, long chatId) {
+    try {
+      return getUser(username).id();
+    } catch (IllegalStateException ex) {
+      sender.send(format("Sorry, I could not find the user [%s].", username), chatId);
+      throw propagate(ex);
+    }
+  }
+
+  /**
    * <p>
    * Format of the report:
    * <p>
@@ -406,15 +421,6 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         })
         .post(commitTo(db))
         .build();
-  }
-
-  private int getUserIdSendError(String username, long chatId) {
-    try {
-      return getUser(username).id();
-    } catch (IllegalStateException ex) {
-      sender.send(format("Sorry, I could not find the user [%s].", username), chatId);
-      throw propagate(ex);
-    }
   }
 
   /**
