@@ -11,9 +11,9 @@
 
 Usage
 -----
-**Maven & Gradle** - [JitPack](https://jitpack.io/#addo37/AbilityBots/v1.0.0)
+**Maven & Gradle** - [JitPack](https://jitpack.io/#addo37/AbilityBots/v1.1.0)
 
-**Plain imports** - [Jar](https://github.com/addo37/AbilityBots/releases/download/v1.0.0/AbilityBots-1.0.0.jar) | [fatJar](https://github.com/addo37/AbilityBots/releases/download/v1.0.0/AbilityBots-with-dependencies-1.0.0.jar)
+**Plain imports** - [Jar](https://github.com/addo37/AbilityBots/releases/download/v1.1.0/AbilityBots-1.1.0.jar) | [fatJar](https://github.com/addo37/AbilityBots/releases/download/v1.1.0/AbilityBots-with-dependencies-1.1.0.jar)
 
 Motivation
 ----------
