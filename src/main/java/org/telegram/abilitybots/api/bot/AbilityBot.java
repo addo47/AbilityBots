@@ -84,10 +84,10 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   private static final String TAG = AbilityBot.class.getSimpleName();
 
   // DB objects
-  static final String ADMINS = "ADMINS";
-  static final String USERS = "USERS";
-  static final String USER_ID = "USER_ID";
-  static final String BLACKLIST = "BLACKLIST";
+  public static final String ADMINS = "ADMINS";
+  public static final String USERS = "USERS";
+  public static final String USER_ID = "USER_ID";
+  public static final String BLACKLIST = "BLACKLIST";
 
   // Factory commands
   protected static final String DEFAULT = "default";

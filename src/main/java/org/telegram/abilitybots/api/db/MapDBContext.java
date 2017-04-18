@@ -3,6 +3,7 @@ package org.telegram.abilitybots.api.db;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
@@ -20,6 +21,7 @@ import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.StreamSupport.stream;
 import static org.mapdb.Serializer.JAVA;
+import static org.telegram.abilitybots.api.bot.AbilityBot.USERS;
 
 /**
  * An implementation of {@link DBContext} that relies on a {@link DB}.
@@ -108,6 +110,7 @@ public class MapDBContext implements DBContext {
   @Override
   public boolean recover(Object backup) {
     Map<String, Object> snapshot = localCopy();
+
     try {
       Map<String, Object> backupData = objectMapper.readValue(backup.toString(), new TypeReference<HashMap<String, Object>>() {
       });
@@ -189,7 +192,16 @@ public class MapDBContext implements DBContext {
         Set entrySet = (Set) value;
         getSet(name).addAll(entrySet);
       } else if (value instanceof Map) {
-        Map entryMap = (Map) value;
+        Map<Object, Object> entryMap = (Map) value;
+
+        // TODO: This is ugly
+        // Special handling of USERS since the key is an integer. JSON by default considers a map a JSONObject.
+        // Keys are serialized and deserialized as String
+        if (name.equals(USERS))
+          entryMap = entryMap.entrySet().stream()
+              .map(entry -> Pair.of(Integer.parseInt(entry.getKey().toString()), entry.getValue()))
+              .collect(toMap(Pair::a, Pair::b));
+
         getMap(name).putAll(entryMap);
       } else if (value instanceof List) {
         List entryList = (List) value;

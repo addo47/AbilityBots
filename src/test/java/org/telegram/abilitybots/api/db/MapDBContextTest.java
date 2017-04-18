@@ -6,18 +6,22 @@ import org.junit.Test;
 import org.telegram.abilitybots.api.objects.EndUser;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
+import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.telegram.abilitybots.api.bot.AbilityBot.USERS;
+import static org.telegram.abilitybots.api.bot.AbilityBot.USER_ID;
 import static org.telegram.abilitybots.api.bot.AbilityBotTest.CREATOR;
 import static org.telegram.abilitybots.api.bot.AbilityBotTest.MUSER;
 import static org.telegram.abilitybots.api.db.MapDBContext.offlineInstance;
 
 public class MapDBContextTest {
 
-  private static final String USERS = "users";
   private static final String TEST = "TEST";
   private DBContext db;
 
@@ -28,23 +32,27 @@ public class MapDBContextTest {
 
   @Test
   public void canRecoverDB() throws IOException {
-    Set<EndUser> users = db.getSet(USERS);
-    users.add(CREATOR);
-    users.add(MUSER);
+    Map<Integer, EndUser> users = db.getMap(USERS);
+    Map<String, Integer> userIds = db.getMap(USER_ID);
+    users.put(CREATOR.id(), CREATOR);
+    users.put(MUSER.id(), MUSER);
+    userIds.put(CREATOR.username(), CREATOR.id());
+    userIds.put(MUSER.username(), MUSER.id());
 
-    Set<EndUser> originalSet = newHashSet(users);
+    db.getSet("AYRE").add(123123);
+    Map<Integer, EndUser> originalUsers = newHashMap(users);
     String beforeBackupInfo = db.info(USERS);
 
     Object jsonBackup = db.backup();
     db.clear();
     boolean recovered = db.recover(jsonBackup);
 
-    Set<EndUser> recoveredSet = db.getSet(USERS);
+    Map<Integer, EndUser> recoveredUsers = db.getMap(USERS);
     String afterRecoveryInfo = db.info(USERS);
 
-    assertEquals("Could not recover database successfully", true, recovered);
-    assertEquals("Set info before and after recovery is different", beforeBackupInfo, afterRecoveryInfo);
-    assertEquals("Set before and after recovery are not equal", originalSet, recoveredSet);
+    assertTrue("Could not recover database successfully", recovered);
+    assertEquals("Map info before and after recovery is different", beforeBackupInfo, afterRecoveryInfo);
+    assertEquals("Map before and after recovery are not equal", originalUsers, recoveredUsers);
   }
 
   @Test
