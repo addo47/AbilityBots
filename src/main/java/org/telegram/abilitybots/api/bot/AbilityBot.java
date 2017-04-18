@@ -37,7 +37,8 @@ import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static jersey.repackaged.com.google.common.base.Throwables.propagate;
 import static org.telegram.abilitybots.api.db.MapDBContext.onlineInstance;
 import static org.telegram.abilitybots.api.objects.Ability.builder;
@@ -85,6 +86,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   // DB objects
   static final String ADMINS = "ADMINS";
   static final String USERS = "USERS";
+  static final String USER_ID = "USER_ID";
   static final String BLACKLIST = "BLACKLIST";
 
   // Factory commands
@@ -148,10 +150,17 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   public abstract int creatorId();
 
   /**
-   * @return the set of all users who have contacted the bot
+   * @return the map of ID -> EndUser
    */
-  protected Set<EndUser> users() {
-    return db.getSet(USERS);
+  protected Map<Integer, EndUser> users() {
+    return db.getMap(USERS);
+  }
+
+  /**
+   * @return the map of Username -> ID
+   */
+  protected Map<String, Integer> userIds() {
+    return db.getMap(USER_ID);
   }
 
   /**
@@ -226,20 +235,30 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
    * Gets the user with the specified username.
    *
    * @param username the username of the required user
-   * @return an optional describing the user
+   * @return the user
    */
-  protected Optional<EndUser> getUser(String username) {
-    return users().stream().filter(user -> user.username().equalsIgnoreCase(username)).findFirst();
+  protected EndUser getUser(String username) {
+    Integer id = userIds().get(username.toLowerCase());
+    if (id == null) {
+      throw new IllegalStateException(format("Could not find ID corresponding to username [%s]", username));
+    }
+
+    return getUser(id);
   }
 
   /**
    * Gets the user with the specified ID.
    *
    * @param id the id of the required user
-   * @return an optional describing the user
+   * @return the user
    */
-  protected Optional<EndUser> getUser(int id) {
-    return users().stream().filter(user -> user.id() == id).findFirst();
+  protected EndUser getUser(int id) {
+    EndUser endUser = users().get(id);
+    if (endUser == null) {
+      throw new IllegalStateException(format("Could not find user corresponding to id [%d]", id));
+    }
+
+    return endUser;
   }
 
   /**
@@ -366,31 +385,36 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .input(1)
         .action(ctx -> {
           String username = stripTag(ctx.firstArg());
-          Optional<Integer> endUser = getUser(username).map(EndUser::id);
+          int userId = getUserIdSendError(username, ctx.chatId());
+          String bannedUser;
 
-          if (checkUser(endUser, ctx.chatId())) {
-            Integer userId = endUser.get();
-            String bannedUser;
+          // Protection from abuse
+          if (userId == creatorId()) {
+            userId = ctx.user().id();
+            bannedUser = isNullOrEmpty(ctx.user().username()) ? addTag(ctx.user().username()) : ctx.user().shortName();
+          } else {
+            bannedUser = addTag(username);
+          }
 
-            // Protection from abuse
-            if (userId == creatorId()) {
-              userId = ctx.user().id();
-              bannedUser = isNullOrEmpty(ctx.user().username()) ? addTag(ctx.user().username()) : ctx.user().shortName();
-            } else {
-              bannedUser = addTag(username);
-            }
-
-            Set<Integer> blacklist = blacklist();
-            if (blacklist.contains(userId))
-              sender.sendMd(format("%s is already *banned*.", bannedUser), ctx.chatId());
-            else {
-              blacklist.add(userId);
-              sender.sendMd(format("%s is now *banned*.", bannedUser), ctx.chatId());
-            }
+          Set<Integer> blacklist = blacklist();
+          if (blacklist.contains(userId))
+            sender.sendMd(format("%s is already *banned*.", bannedUser), ctx.chatId());
+          else {
+            blacklist.add(userId);
+            sender.sendMd(format("%s is now *banned*.", bannedUser), ctx.chatId());
           }
         })
         .post(commitTo(db))
         .build();
+  }
+
+  private int getUserIdSendError(String username, long chatId) {
+    try {
+      return getUser(username).id();
+    } catch (IllegalStateException ex) {
+      sender.send(format("Sorry, I could not find the user [%s].", username), chatId);
+      throw propagate(ex);
+    }
   }
 
   /**
@@ -406,16 +430,14 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .input(1)
         .action(ctx -> {
           String username = stripTag(ctx.firstArg());
-          Optional<Integer> endUser = getUser(username).map(EndUser::id);
+          Integer userId = getUserIdSendError(username, ctx.chatId());
 
-          if (checkUser(endUser, ctx.chatId())) {
-            Set<Integer> blacklist = blacklist();
+          Set<Integer> blacklist = blacklist();
 
-            if (!blacklist.remove(endUser.get()))
-              sender.sendMd(format("@%s is *not* on the *blacklist*.", username), ctx.chatId());
-            else {
-              sender.sendMd(format("@%s, your ban has been *lifted*.", username), ctx.chatId());
-            }
+          if (!blacklist.remove(userId))
+            sender.sendMd(format("@%s is *not* on the *blacklist*.", username), ctx.chatId());
+          else {
+            sender.sendMd(format("@%s, your ban has been *lifted*.", username), ctx.chatId());
           }
         })
         .post(commitTo(db))
@@ -433,17 +455,14 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .input(1)
         .action(ctx -> {
           String username = stripTag(ctx.firstArg());
-          Optional<Integer> endUserId = getUser(username).map(EndUser::id);
+          Integer userId = getUserIdSendError(username, ctx.chatId());
 
-          if (checkUser(endUserId, ctx.chatId())) {
-            Set<Integer> admins = admins();
-            Integer userId = endUserId.get();
-            if (admins.contains(userId))
-              sender.sendMd(format("@%s is already an *admin*.", username), ctx.chatId());
-            else {
-              admins.add(userId);
-              sender.sendMd(format("@%s has been *promoted*.", username), ctx.chatId());
-            }
+          Set<Integer> admins = admins();
+          if (admins.contains(userId))
+            sender.sendMd(format("@%s is already an *admin*.", username), ctx.chatId());
+          else {
+            admins.add(userId);
+            sender.sendMd(format("@%s has been *promoted*.", username), ctx.chatId());
           }
         }).post(commitTo(db))
         .build();
@@ -460,15 +479,13 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
         .input(1)
         .action(ctx -> {
           String username = stripTag(ctx.firstArg());
-          Optional<Integer> endUserId = getUser(username).map(EndUser::id);
+          Integer userId = getUserIdSendError(username, ctx.chatId());
 
-          if (checkUser(endUserId, ctx.chatId())) {
-            Set<Integer> admins = admins();
-            if (admins.remove(endUserId.get())) {
-              sender.sendMd(format("@%s has been *demoted*.", username), ctx.chatId());
-            } else {
-              sender.sendMd(format("@%s is *not* an *admin*.", username), ctx.chatId());
-            }
+          Set<Integer> admins = admins();
+          if (admins.remove(userId)) {
+            sender.sendMd(format("@%s has been *demoted*.", username), ctx.chatId());
+          } else {
+            sender.sendMd(format("@%s is *not* an *admin*.", username), ctx.chatId());
           }
         })
         .post(commitTo(db))
@@ -543,15 +560,6 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
       BotLogger.error("Could not add ability", TAG, e);
       throw propagate(e);
     }
-  }
-
-  private boolean checkUser(Optional<Integer> endUserId, Long chatId) {
-    if (!endUserId.isPresent()) {
-      sender.send("Sorry, I could not find the specified username.", chatId);
-      return false;
-    }
-
-    return true;
   }
 
   private void postConsumption(Pair<MessageContext, Ability> pair) {
@@ -643,19 +651,27 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
   Update addUser(Update update) {
     EndUser endUser = fromUser(AbilityUtils.getUser(update));
-    Set<EndUser> set = users();
 
-    Optional<EndUser> optUser = set.stream().filter(user -> user.id() == endUser.id()).findAny();
-    if (!optUser.isPresent()) {
-      set.add(endUser);
-      db.commit();
-      return update;
-    } else if (!optUser.get().equals(endUser)) {
-      set.remove(optUser.get());
-      set.add(endUser);
-      db.commit();
-    }
+    users().compute(endUser.id(), (id, user) -> {
+      if (user == null) {
+        // Add ID mapping
+        userIds().put(endUser.username().toLowerCase(), endUser.id());
+        return endUser;
+      }
 
+      if (!user.equals(endUser)) {
+        // Remove old username -> ID
+        userIds().remove(user.username());
+        // Add new mapping with the new username
+        userIds().put(endUser.username().toLowerCase(), endUser.id());
+
+        return endUser;
+      }
+
+      return user;
+    });
+
+    db.commit();
     return update;
   }
 

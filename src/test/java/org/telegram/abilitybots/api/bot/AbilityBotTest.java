@@ -1,5 +1,6 @@
 package org.telegram.abilitybots.api.bot;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
@@ -17,6 +18,8 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -26,7 +29,8 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static org.telegram.abilitybots.api.bot.AbilityBot.*;
+import static org.telegram.abilitybots.api.bot.AbilityBot.RECOVERY_MESSAGE;
+import static org.telegram.abilitybots.api.bot.AbilityBot.RECOVER_SUCCESS;
 import static org.telegram.abilitybots.api.bot.DefaultBot.getDefaultBuilder;
 import static org.telegram.abilitybots.api.db.MapDBContext.offlineInstance;
 import static org.telegram.abilitybots.api.objects.EndUser.endUser;
@@ -103,8 +107,8 @@ public class AbilityBotTest {
   }
 
   @Test
-  public void canPromote() {
-    bot.users().add(MUSER);
+  public void canDemote() {
+    addUsers(MUSER);
     bot.admins().add(MUSER.id());
 
     MessageContext context = defaultContext();
@@ -117,8 +121,8 @@ public class AbilityBotTest {
   }
 
   @Test
-  public void canDemote() {
-    bot.users().add(MUSER);
+  public void canPromote() {
+    addUsers(MUSER);
 
     MessageContext context = defaultContext();
 
@@ -131,7 +135,7 @@ public class AbilityBotTest {
 
   @Test
   public void canBanUser() {
-    bot.users().add(MUSER);
+    addUsers(MUSER);
     MessageContext context = defaultContext();
 
     bot.banUser().action().accept(context);
@@ -143,7 +147,7 @@ public class AbilityBotTest {
 
   @Test
   public void canUnbanUser() {
-    bot.users().add(MUSER);
+    addUsers(MUSER);
     bot.blacklist().add(MUSER.id());
 
     MessageContext context = defaultContext();
@@ -165,8 +169,7 @@ public class AbilityBotTest {
 
   @Test
   public void cannotBanCreator() {
-    bot.users().add(MUSER);
-    bot.users().add(CREATOR);
+    addUsers(MUSER, CREATOR);
     MessageContext context = mock(MessageContext.class);
     when(context.user()).thenReturn(MUSER);
     when(context.firstArg()).thenReturn(CREATOR.username());
@@ -176,6 +179,13 @@ public class AbilityBotTest {
     Set<Integer> actual = bot.blacklist();
     Set<Integer> expected = newHashSet(MUSER.id());
     assertEquals("Impostor was not added to the blacklist", expected, actual);
+  }
+
+  private void addUsers(EndUser... users) {
+    Arrays.stream(users).forEach(user -> {
+      bot.users().put(user.id(), user);
+      bot.userIds().put(user.username().toLowerCase(), user.id());
+    });
   }
 
   @Test
@@ -192,7 +202,7 @@ public class AbilityBotTest {
 
   @Test
   public void userGetsBannedIfClaimsBot() {
-    bot.users().add(MUSER);
+    addUsers(MUSER);
     MessageContext context = mock(MessageContext.class);
     when(context.user()).thenReturn(MUSER);
 
@@ -230,14 +240,15 @@ public class AbilityBotTest {
 
     bot.addUser(update);
 
-    Set<EndUser> actual = bot.users();
-    Set<EndUser> expected = newHashSet(MUSER);
-    assertEquals("User was not added", expected, actual);
+    Map<String, Integer> expectedUserIds = ImmutableMap.of(MUSER.username(), MUSER.id());
+    Map<Integer, EndUser> expectedUsers = ImmutableMap.of(MUSER.id(), MUSER);
+    assertEquals("User was not added", expectedUserIds, bot.userIds());
+    assertEquals("User was not added", expectedUsers, bot.users());
   }
 
   @Test
   public void canEditUser() {
-    bot.users().add(MUSER);
+    addUsers(MUSER);
     Update update = mock(Update.class);
     Message message = mock(Message.class);
     User user = mock(User.class);
@@ -252,9 +263,10 @@ public class AbilityBotTest {
 
     bot.addUser(update);
 
-    Set<EndUser> actual = bot.users();
-    Set<EndUser> expected = newHashSet(changedUser);
-    assertEquals("User was not properly edited", expected, actual);
+    Map<String, Integer> expectedUserIds = ImmutableMap.of(changedUser.username(), changedUser.id());
+    Map<Integer, EndUser> expectedUsers = ImmutableMap.of(changedUser.id(), changedUser);
+    assertEquals("User was not properly edited", bot.userIds(), expectedUserIds);
+    assertEquals("User was not properly edited", expectedUsers, expectedUsers);
   }
 
   @Test
@@ -270,7 +282,6 @@ public class AbilityBotTest {
   @Test
   public void canCheckInput() {
     Update update = mock(Update.class);
-    Message message = mock(Message.class);
     Ability abilityWithOneInput = getDefaultBuilder()
         .build();
     Ability abilityWithZeroInput = getDefaultBuilder()
