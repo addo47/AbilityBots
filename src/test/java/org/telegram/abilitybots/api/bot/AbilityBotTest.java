@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.collect.Sets.newHashSet;
+import static java.lang.String.format;
 import static java.util.Collections.emptySet;
 import static org.apache.commons.lang3.ArrayUtils.addAll;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -63,16 +64,73 @@ public class AbilityBotTest {
   }
 
   @Test
+  public void sendsPrivacyViolation() {
+    Update update = mockFullUpdate(MUSER, "/admin");
+
+    bot.onUpdateReceived(update);
+
+    verify(sender, times(1)).send(format("Sorry, %s-only feature.", "admin"), MUSER.id());
+  }
+
+  @Test
+  public void sendsLocalityViolation() {
+    Update update = mockFullUpdate(MUSER, "/group");
+
+    bot.onUpdateReceived(update);
+
+    verify(sender, times(1)).send(format("Sorry, %s-only feature.", "group"), MUSER.id());
+
+  }
+
+  @Test
+  public void sendsInputArgsViolation() {
+    Update update = mockFullUpdate(MUSER, "/count 1 2 3");
+
+    bot.onUpdateReceived(update);
+
+    verify(sender, times(1)).send(format("Sorry, this feature requires %d arguments.", 4), MUSER.id());
+  }
+
+  @Test
   public void canProcessRepliesIfSatisfyRequirements() {
-    Update update = mock(Update.class);
-    when(update.hasMessage()).thenReturn(true);
-    Message message = mock(Message.class);
-    when(message.getChatId()).thenReturn(GROUP_ID);
-    when(update.getMessage()).thenReturn(message);
+    Update update = mockFullUpdate(MUSER, "must reply");
 
     // False means the update was not pushed down the stream since it has been consumed by the reply
     assertFalse(bot.filterReply(update));
-    verify(sender, times(1)).send("reply", GROUP_ID);
+    verify(sender, times(1)).send("reply", MUSER.id());
+  }
+
+  @NotNull
+  private Update mockFullUpdate(EndUser fromUser, String args) {
+    bot.users().put(MUSER.id(), MUSER);
+    bot.users().put(CREATOR.id(), CREATOR);
+    bot.userIds().put(CREATOR.username(), CREATOR.id());
+    bot.userIds().put(MUSER.username(), MUSER.id());
+
+    bot.admins().add(CREATOR.id());
+
+    User user = mockUser(fromUser);
+
+    Update update = mock(Update.class);
+    when(update.hasMessage()).thenReturn(true);
+    Message message = mock(Message.class);
+    when(message.getFrom()).thenReturn(user);
+    when(message.getText()).thenReturn(args);
+    when(message.hasText()).thenReturn(true);
+    when(message.isUserMessage()).thenReturn(true);
+    when(message.getChatId()).thenReturn((long) fromUser.id());
+    when(update.getMessage()).thenReturn(message);
+    return update;
+  }
+
+  private User mockUser(EndUser fromUser) {
+    User user = mock(User.class);
+    when(user.getId()).thenReturn(fromUser.id());
+    when(user.getUserName()).thenReturn(fromUser.username());
+    when(user.getFirstName()).thenReturn(fromUser.firstName());
+    when(user.getLastName()).thenReturn(fromUser.lastName());
+
+    return user;
   }
 
   @Test
@@ -281,7 +339,7 @@ public class AbilityBotTest {
 
   @Test
   public void canCheckInput() {
-    Update update = mock(Update.class);
+    Update update = mockFullUpdate(MUSER, "/something");
     Ability abilityWithOneInput = getDefaultBuilder()
         .build();
     Ability abilityWithZeroInput = getDefaultBuilder()

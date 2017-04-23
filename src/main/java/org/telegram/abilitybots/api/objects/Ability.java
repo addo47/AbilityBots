@@ -194,14 +194,14 @@ public final class Ability {
       return this;
     }
 
-    public Ability build() {
-      return new Ability(name, info, locality, privacy, argNum, consumer, postConsumer, replies, flags);
-    }
-
     @SafeVarargs
     public final AbilityBuilder reply(Consumer<Update> action, Predicate<Update>... conditions) {
       replies.add(Reply.of(action, conditions));
       return this;
+    }
+
+    public Ability build() {
+      return new Ability(name, info, locality, privacy, argNum, consumer, postConsumer, replies, flags);
     }
   }
 }

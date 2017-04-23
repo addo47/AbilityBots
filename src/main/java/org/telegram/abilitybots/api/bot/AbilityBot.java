@@ -1,5 +1,6 @@
 package org.telegram.abilitybots.api.bot;
 
+import com.google.common.collect.Streams;
 import org.apache.commons.io.IOUtils;
 import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.*;
@@ -24,9 +25,8 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
@@ -125,12 +125,6 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     this.botUsername = botUsername;
     this.db = db;
     this.sender = new DefaultMessageSender(this);
-
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2017, Calendar.APRIL, 17, 6, 27, 0);
-    long desiredDelay = calendar.toInstant().getEpochSecond() - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
-    Executors.newSingleThreadScheduledExecutor()
-        .schedule(() -> {/* your logic here */}, desiredDelay, TimeUnit.SECONDS);
 
     registerAbilities();
   }
@@ -531,21 +525,25 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   }
 
   /**
-   * Registers the declared abilities using method reflection. Also, replies are accumulated using the built abilities.
+   * Registers the declared abilities using method reflection. Also, replies are accumulated using the built abilities and standalone methods that return a Reply.
    * <p>
-   * <b>Only abilities with the <u>public</u> accessor are registered!</b>
+   * <b>Only abilities and replies with the <u>public</u> accessor are registered!</b>
    */
   private void registerAbilities() {
     try {
       abilities = stream(this.getClass().getMethods())
           .filter(method -> method.getReturnType().equals(Ability.class))
-          .map(this::invokeMethod)
+          .map(this::returnAbility)
           .collect(toMap(Ability::name, identity()));
 
-      replies = abilities.values().stream()
-          .flatMap(ability -> ability.replies().stream())
-          .collect(toList());
+      Stream<Reply> methodReplies = stream(this.getClass().getMethods())
+          .filter(method -> method.getReturnType().equals(Reply.class))
+          .map(this::returnReply);
 
+      Stream<Reply> abilityReplies = abilities.values().stream()
+          .flatMap(ability -> ability.replies().stream());
+
+      replies = Streams.concat(methodReplies, abilityReplies).collect(toList());
     } catch (IllegalStateException e) {
       BotLogger.error(TAG, "Duplicate names found while registering abilities. Make sure that the abilities declared don't clash with the reserved ones.", e);
       throw propagate(e);
@@ -554,16 +552,31 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
   }
 
   /**
-   * Invoke the method and retrieve its return Ability.
+   * Invokes the method and retrieves its return {@link Ability}.
    *
    * @param method a method that returns an ability
    * @return the ability returned by the method
    */
-  private Ability invokeMethod(Method method) {
+  private Ability returnAbility(Method method) {
     try {
       return (Ability) method.invoke(this);
     } catch (IllegalAccessException | InvocationTargetException e) {
       BotLogger.error("Could not add ability", TAG, e);
+      throw propagate(e);
+    }
+  }
+
+  /**
+   * Invokes the method and retrieves its returned Reply.
+   *
+   * @param method a method that returns a reply
+   * @return the reply returned by the method
+   */
+  private Reply returnReply(Method method) {
+    try {
+      return (Reply) method.invoke(this);
+    } catch (IllegalAccessException | InvocationTargetException e) {
+      BotLogger.error("Could not add reply", TAG, e);
       throw propagate(e);
     }
   }
@@ -595,14 +608,23 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     String[] tokens = trio.c();
     int abilityTokens = trio.b().tokens();
 
-    return abilityTokens == 0 || (tokens.length > 0 && tokens.length == abilityTokens);
+    boolean isOk = abilityTokens == 0 || (tokens.length > 0 && tokens.length == abilityTokens);
+
+    if (!isOk)
+      sender.send(String.format("Sorry, this feature requires %d arguments.", abilityTokens), getChatId(trio.a()));
+    return isOk;
   }
 
   boolean checkLocality(Trio<Update, Ability, String[]> trio) {
     Update update = trio.a();
     Locality locality = isUserMessage(update) ? USER : GROUP;
     Locality abilityLocality = trio.b().locality();
-    return abilityLocality == ALL || locality == abilityLocality;
+
+    boolean isOk = abilityLocality == ALL || locality == abilityLocality;
+
+    if(!isOk)
+      sender.send(String.format("Sorry, %s-only feature.", abilityLocality.toString().toLowerCase()), getChatId(trio.a()));
+    return isOk;
   }
 
   boolean checkPrivacy(Trio<Update, Ability, String[]> trio) {
@@ -613,7 +635,11 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
     privacy = isCreator(id) ? CREATOR : isAdmin(id) ? ADMIN : PUBLIC;
 
-    return privacy.compareTo(trio.b().privacy()) >= 0;
+    boolean isOk = privacy.compareTo(trio.b().privacy()) >= 0;
+
+    if (!isOk)
+      sender.send(String.format("Sorry, %s-only feature.", trio.b().privacy().toString().toLowerCase()), getChatId(trio.a()));
+    return isOk;
   }
 
   private boolean isCreator(int id) {
