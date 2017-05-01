@@ -24,9 +24,11 @@ import java.io.FileReader;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
@@ -622,7 +624,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
     boolean isOk = abilityLocality == ALL || locality == abilityLocality;
 
-    if(!isOk)
+    if (!isOk)
       sender.send(String.format("Sorry, %s-only feature.", abilityLocality.toString().toLowerCase()), getChatId(trio.a()));
     return isOk;
   }
@@ -686,17 +688,12 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
     users().compute(endUser.id(), (id, user) -> {
       if (user == null) {
-        // Add ID mapping
-        userIds().put(endUser.username().toLowerCase(), endUser.id());
+        updateUserId(user, endUser);
         return endUser;
       }
 
       if (!user.equals(endUser)) {
-        // Remove old username -> ID
-        userIds().remove(user.username());
-        // Add new mapping with the new username
-        userIds().put(endUser.username().toLowerCase(), endUser.id());
-
+        updateUserId(user, endUser);
         return endUser;
       }
 
@@ -705,6 +702,18 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
     db.commit();
     return update;
+  }
+
+  private void updateUserId(EndUser oldUser, EndUser newUser) {
+    if (oldUser != null && oldUser.username() != null) {
+      // Remove old username -> ID
+      userIds().remove(oldUser.username());
+    }
+
+    if (newUser.username() != null) {
+      // Add new mapping with the new username
+      userIds().put(newUser.username().toLowerCase(), newUser.id());
+    }
   }
 
   boolean filterReply(Update update) {
