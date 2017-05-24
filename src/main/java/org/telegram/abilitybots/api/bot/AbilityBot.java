@@ -731,8 +731,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     Update update = trio.a();
 
     return ability.flags().stream()
-        .map(flag -> flag.test(update))
-        .reduce(true, Boolean::logicalAnd);
+        .reduce(true, (flag, nextFlag) -> flag && nextFlag.test(update), Boolean::logicalAnd);
   }
 
   private File downloadFileWithId(String fileId) throws TelegramApiException {
