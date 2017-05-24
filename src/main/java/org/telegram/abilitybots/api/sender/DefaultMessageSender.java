@@ -6,6 +6,7 @@ import org.telegram.telegrambots.api.methods.games.SetGameScore;
 import org.telegram.telegrambots.api.methods.groupadministration.*;
 import org.telegram.telegrambots.api.methods.send.*;
 import org.telegram.telegrambots.api.methods.updates.DeleteWebhook;
+import org.telegram.telegrambots.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageCaption;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
@@ -128,6 +129,16 @@ public class DefaultMessageSender implements MessageSender {
   @Override
   public Integer getChatMemberCount(GetChatMemberCount getChatMemberCount) throws TelegramApiException {
     return bot.getChatMemberCount(getChatMemberCount);
+  }
+
+  @Override
+  public Boolean deleteMessage(DeleteMessage deleteMessage) throws TelegramApiException {
+    return bot.deleteMessage(deleteMessage);
+  }
+
+  @Override
+  public void deleteMessageAsync(DeleteMessage deleteMessage, SentCallback<Boolean> sentCallback) throws TelegramApiException {
+    bot.deleteMessage(deleteMessage, sentCallback);
   }
 
   @Override

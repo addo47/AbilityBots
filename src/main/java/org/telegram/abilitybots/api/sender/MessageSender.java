@@ -6,6 +6,7 @@ import org.telegram.telegrambots.api.methods.games.SetGameScore;
 import org.telegram.telegrambots.api.methods.groupadministration.*;
 import org.telegram.telegrambots.api.methods.send.*;
 import org.telegram.telegrambots.api.methods.updates.DeleteWebhook;
+import org.telegram.telegrambots.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageCaption;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
@@ -58,6 +59,10 @@ public interface MessageSender {
   ChatMember getChatMember(GetChatMember getChatMember) throws TelegramApiException;
 
   Integer getChatMemberCount(GetChatMemberCount getChatMemberCount) throws TelegramApiException;
+
+  Boolean deleteMessage(DeleteMessage deleteMessage) throws TelegramApiException;
+
+  void deleteMessageAsync(DeleteMessage deleteMessage, SentCallback<Boolean> sentCallback) throws TelegramApiException;
 
   Serializable editMessageText(EditMessageText editMessageText) throws TelegramApiException;
 

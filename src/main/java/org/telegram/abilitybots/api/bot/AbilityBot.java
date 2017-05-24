@@ -613,7 +613,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
     boolean isOk = abilityTokens == 0 || (tokens.length > 0 && tokens.length == abilityTokens);
 
     if (!isOk)
-      sender.send(String.format("Sorry, this feature requires %d %s.", abilityTokens, abilityTokens == 1 ? "argument" : "arguments"), getChatId(trio.a()));
+      sender.send(String.format("Sorry, this feature requires %d additional %s.", abilityTokens, abilityTokens == 1 ? "input" : "inputs"), getChatId(trio.a()));
     return isOk;
   }
 

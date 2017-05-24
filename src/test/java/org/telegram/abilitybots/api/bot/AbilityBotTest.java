@@ -88,7 +88,7 @@ public class AbilityBotTest {
 
     bot.onUpdateReceived(update);
 
-    verify(sender, times(1)).send(format("Sorry, this feature requires %d arguments.", 4), MUSER.id());
+    verify(sender, times(1)).send(format("Sorry, this feature requires %d additional inputs.", 4), MUSER.id());
   }
 
   @Test
