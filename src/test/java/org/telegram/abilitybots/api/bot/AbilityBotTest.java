@@ -100,39 +100,6 @@ public class AbilityBotTest {
     verify(sender, times(1)).send("reply", MUSER.id());
   }
 
-  @NotNull
-  private Update mockFullUpdate(EndUser fromUser, String args) {
-    bot.users().put(MUSER.id(), MUSER);
-    bot.users().put(CREATOR.id(), CREATOR);
-    bot.userIds().put(CREATOR.username(), CREATOR.id());
-    bot.userIds().put(MUSER.username(), MUSER.id());
-
-    bot.admins().add(CREATOR.id());
-
-    User user = mockUser(fromUser);
-
-    Update update = mock(Update.class);
-    when(update.hasMessage()).thenReturn(true);
-    Message message = mock(Message.class);
-    when(message.getFrom()).thenReturn(user);
-    when(message.getText()).thenReturn(args);
-    when(message.hasText()).thenReturn(true);
-    when(message.isUserMessage()).thenReturn(true);
-    when(message.getChatId()).thenReturn((long) fromUser.id());
-    when(update.getMessage()).thenReturn(message);
-    return update;
-  }
-
-  private User mockUser(EndUser fromUser) {
-    User user = mock(User.class);
-    when(user.getId()).thenReturn(fromUser.id());
-    when(user.getUserName()).thenReturn(fromUser.username());
-    when(user.getFirstName()).thenReturn(fromUser.firstName());
-    when(user.getLastName()).thenReturn(fromUser.lastName());
-
-    return user;
-  }
-
   @Test
   public void canBackupDB() throws TelegramApiException {
     MessageContext context = defaultContext();
@@ -532,6 +499,39 @@ public class AbilityBotTest {
   public void tearDown() throws IOException {
     db.clear();
     db.close();
+  }
+
+  private User mockUser(EndUser fromUser) {
+    User user = mock(User.class);
+    when(user.getId()).thenReturn(fromUser.id());
+    when(user.getUserName()).thenReturn(fromUser.username());
+    when(user.getFirstName()).thenReturn(fromUser.firstName());
+    when(user.getLastName()).thenReturn(fromUser.lastName());
+
+    return user;
+  }
+
+  @NotNull
+  private Update mockFullUpdate(EndUser fromUser, String args) {
+    bot.users().put(MUSER.id(), MUSER);
+    bot.users().put(CREATOR.id(), CREATOR);
+    bot.userIds().put(CREATOR.username(), CREATOR.id());
+    bot.userIds().put(MUSER.username(), MUSER.id());
+
+    bot.admins().add(CREATOR.id());
+
+    User user = mockUser(fromUser);
+
+    Update update = mock(Update.class);
+    when(update.hasMessage()).thenReturn(true);
+    Message message = mock(Message.class);
+    when(message.getFrom()).thenReturn(user);
+    when(message.getText()).thenReturn(args);
+    when(message.hasText()).thenReturn(true);
+    when(message.isUserMessage()).thenReturn(true);
+    when(message.getChatId()).thenReturn((long) fromUser.id());
+    when(update.getMessage()).thenReturn(message);
+    return update;
   }
 
   private void mockUser(Update update, Message message, User user) {

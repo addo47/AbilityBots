@@ -11,9 +11,9 @@
 
 Usage
 -----
-**Maven & Gradle** - [JitPack](https://jitpack.io/#addo37/AbilityBots/v1.1.0)
+**Maven & Gradle** - [JitPack](https://jitpack.io/#addo37/AbilityBots/v1.2.3)
 
-**Plain imports** - [Jar](https://github.com/addo37/AbilityBots/releases/download/v1.2.1/AbilityBots-1.2.1.jar) | [fatJar](https://github.com/addo37/AbilityBots/releases/download/v1.2.1/AbilityBots-with-dependencies-1.2.1.jar)
+**Plain imports** - [Jar](https://github.com/addo37/AbilityBots/releases/download/v1.2.3/AbilityBots-1.2.3.jar) | [fatJar](https://github.com/addo37/AbilityBots/releases/download/v1.2.3/AbilityBots-with-dependencies-1.2.3.jar)
 
 Motivation
 ----------
@@ -125,7 +125,7 @@ Alongside these exciting core features of the AbilityBot, the following have bee
 
 What's next?
 ------------
-This ReadMe is associated with the v1.0 release of the AbilityBot abstraction. I am looking forward to:
+I am looking forward to:
 * Provide a trigger to record metrics per ability
 * Implement AsyncAbility
 * Maintain integration with the latest updates on the basic API
