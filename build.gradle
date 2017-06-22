@@ -12,10 +12,10 @@ repositories {
 }
 
 dependencies {
-    compile     'org.telegram:telegrambots:3.0.1'
-    compile     'com.google.guava:guava:21.0'
-    compile     'org.mapdb:mapdb:3.0.4'
-    compile     'org.apache.commons:commons-lang3:3.5'
+    compile 'org.telegram:telegrambots:3.0.2'
+    compile 'com.google.guava:guava:21.0'
+    compile 'org.mapdb:mapdb:3.0.4'
+    compile 'org.apache.commons:commons-lang3:3.5'
 
     testCompile 'org.mockito:mockito-all:2.0.2-beta'
     testCompile 'junit:junit:4.11'
@@ -33,6 +33,16 @@ task fatJar(type: Jar) {
 
 publishing {
     publications {
+        all {
+            pom.withXml {
+                asNode().dependencies.'*'.findAll() {
+                    it.scope.text() == 'runtime' && project.configurations.compile.allDependencies.find { dep ->
+                        dep.name == it.artifactId.text()
+                    }
+                }.each { it.scope*.value = 'compile' }
+            }
+        }
+
         mavenJava(MavenPublication) {
             from components.java
 
