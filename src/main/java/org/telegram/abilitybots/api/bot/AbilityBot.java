@@ -1,6 +1,5 @@
 package org.telegram.abilitybots.api.bot;
 
-import com.google.common.collect.Streams;
 import org.apache.commons.io.IOUtils;
 import org.telegram.abilitybots.api.db.DBContext;
 import org.telegram.abilitybots.api.objects.*;
@@ -108,12 +107,12 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
 
   // DB and sender
   protected final DBContext db;
-
   protected MessageSender sender;
+
   // Bot token and username
   private final String botToken;
-
   private final String botUsername;
+
   // Ability registry
   private Map<String, Ability> abilities;
 
@@ -545,7 +544,7 @@ public abstract class AbilityBot extends TelegramLongPollingBot {
       Stream<Reply> abilityReplies = abilities.values().stream()
           .flatMap(ability -> ability.replies().stream());
 
-      replies = Streams.concat(methodReplies, abilityReplies).collect(toList());
+      replies = Stream.concat(methodReplies, abilityReplies).collect(toList());
     } catch (IllegalStateException e) {
       BotLogger.error(TAG, "Duplicate names found while registering abilities. Make sure that the abilities declared don't clash with the reserved ones.", e);
       throw propagate(e);
