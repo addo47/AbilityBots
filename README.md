@@ -15,9 +15,9 @@ IMPORTANCE NOTICE
 
 Usage
 -----
-**Maven & Gradle** - [JitPack](https://jitpack.io/#addo37/AbilityBots/v1.2.5)
+**Maven & Gradle** - [JitPack](https://jitpack.io/#rubenlagus/TelegramBots)
 
-**Plain imports** - [Jar](https://github.com/addo37/AbilityBots/releases/download/v1.2.5/AbilityBots-1.2.5.jar) | [fatJar](https://github.com/addo37/AbilityBots/releases/download/v1.2.5/AbilityBots-with-dependencies-1.2.5.jar)
+**Plain imports** - [Here](https://github.com/rubenlagus/TelegramBots/releases)
 
 Motivation
 ----------
