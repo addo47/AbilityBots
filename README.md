@@ -1,3 +1,7 @@
+IMPORTANCE NOTICE
+-----------------
+**This module is now part of the [official Telegram Java SDK](https://github.com/rubenlagus/TelegramBots/tree/master/telegrambots-abilities). As such, please refer to that page for the latest updates on AbilityBot! The module in this repository is now maintained in the official SDK. Thanks to everyone who has helped in the making of this project. See you on the next update! ^^**
+
 <div align="center">
   <img src="https://github.com/addo37/AbilityBots/blob/gh-pages/images/API%20BOT-03.png?raw=true" alt="abilitybots" width="200" height="200"/>
 
